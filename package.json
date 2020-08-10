@@ -4,12 +4,19 @@
   "description": "GAT is a medium that provides information about games and technology",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node main.js",
+    "server": "nodemon main.js"
   },
   "author": "Games And Technology",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.17.1"
+    "bcrypt": "^5.0.0",
+    "body-parser": "^1.19.0",
+    "client-sessions": "^0.8.0",
+    "concurrently": "^5.3.0",
+    "express": "^4.17.1",
+    "mongodb": "^3.6.0",
+    "mongoose": "^5.9.28"
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
