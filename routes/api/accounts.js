@@ -42,12 +42,12 @@ router.post('/login', (req, res) => {
         user.comparePassword(password, (err, isMatch) => {
             if (isMatch && isMatch == true) {
                 req.sessioncookie.user = user;
-                console.log("berhasil masuk");
+                console.log("Welcome...!");
                 return res.status(200).send();
 
             }
             else {
-                console.log("akun salah");
+                console.log("Invalid Email or Password...!");
                 return res.status(400).send();
             }
         });

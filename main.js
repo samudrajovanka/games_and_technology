@@ -1,6 +1,15 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
+const session = require('client-sessions');
+
+// Session Middleware 
+app.use(session({
+    cookieName: "sessioncookie",
+    secret: "long_string_which is_hard_to_crack",
+    duration: 30 * 60 * 1000,
+    activeDuration: 5*60 * 1000
+}));
 
 // Bodyparser Middleware
 app.use(bodyParser.json());
