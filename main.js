@@ -9,12 +9,19 @@ app.use(bodyParser.json());
 const connectDB = require ('./config/db');
     connectDB();
 
+// ENDPOINT 
+const endpoint = "./routes/api"
+
+// HOME
+const home = require (`${endpoint}/home`);
+    app.use('/', home);
+
 // Items 
-const items = require ('./routes/api/items');
+const items = require (`${endpoint}/items`);
     app.use('/api/items', items);
 
 // Accounts
-const accounts = require ('./routes/api/accounts');
+const accounts = require (`${endpoint}/accounts`);
     app.use('/api/accounts', accounts);
 
 // PORT CONNECTION 
