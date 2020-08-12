@@ -13,6 +13,14 @@ const AccountSchema = new Schema({
         type: String,
         required: true
     },
+    nickname: {
+        type: String,
+        required: true
+    },
+    accountImage: {
+        type: String,
+        required: true
+    },
     date: {
         type: Date,
         default: Date.now

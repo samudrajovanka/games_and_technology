@@ -36,3 +36,8 @@ app.use('/api/items', items);
 // Accounts
 const accounts = require(`${endpoint}/accounts`);
 app.use('/api/accounts', accounts);
+app.use('/accountohoto', express.static('accountphoto'));
+
+// PORT CONNECTION 
+const port = process.env.PORT || 5000;
+app.listen(port, () => console.log(`Server started on port ${port}`));
