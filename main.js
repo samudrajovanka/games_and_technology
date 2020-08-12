@@ -18,12 +18,8 @@ app.use(bodyParser.json());
 const connectDB = require('./config/db');
 connectDB();
 
-// PORT CONNECTION 
-const port = process.env.PORT || 5000;
-app.listen(port, () => console.log(`Server started on port ${port}`));
-
 // ENDPOINT 
-const endpoint = "./routes/api"
+const endpoint = "./routes/api";
 
 // HOME
 const home = require(`${endpoint}/home`);
@@ -36,7 +32,7 @@ app.use('/api/items', items);
 // Accounts
 const accounts = require(`${endpoint}/accounts`);
 app.use('/api/accounts', accounts);
-app.use('/accountohoto', express.static('accountphoto'));
+app.use('/accountphoto', express.static('accountphoto'));
 
 // PORT CONNECTION 
 const port = process.env.PORT || 5000;

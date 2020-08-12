@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const multer = require ('multer');
+const multer = require('multer');
 
 // LOCATION SAVING PHOTO FOR ACCOUNT
 const accountStorage = multer.diskStorage({
-    destination: function(req, file, callback){
-        callback(null,'./accountphoto/');
+    destination: function (req, file, callback) {
+        callback(null, './accountphoto/');
     },
-    filename: function(req, file, callback){
+    filename: function (req, file, callback) {
         callback(null, Date.now() + file.originalname)
     }
 });
@@ -19,15 +19,16 @@ const fileFilter = (req, file, callback) => {
         callback(null, true);
     }
     else {
-    // REJECT A PHOTO
+        // REJECT A PHOTO
         callback(null, false);
-    } 
+    }
 }
 // LIMIT PHOTO SIZE
-const upload = multer({storage: accountStorage, limits: {
-    fileSize: 1024 * 1024 * 5
-},
-fileFilter: fileFilter
+const upload = multer({
+    storage: accountStorage, limits: {
+        fileSize: 1024 * 1024 * 5
+    },
+    fileFilter: fileFilter
 });
 
 //item Model
@@ -46,8 +47,8 @@ router.get('/', (req, res) => {
 // @desc    Create An Account
 // @acess   Public
 router.post('/register', upload.single('accountImage'), (req, res) => {
-        console.log(req.file);
-        const newAccount = new Account({
+    console.log(req.file);
+    const newAccount = new Account({
         email: req.body.email,
         nickname: req.body.nickname,
         password: req.body.password,
@@ -59,7 +60,7 @@ router.post('/register', upload.single('accountImage'), (req, res) => {
 // @route   POST api/account
 // @desc    Login An Account
 // @acess   Public
-router.post('/login',(req, res) => {
+router.post('/login', (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
     const nickname = req.body.nickname;
@@ -74,7 +75,7 @@ router.post('/login',(req, res) => {
         }
 
         user.comparePassword(password, (err, isMatch) => {
-            if (isMatch== true) {
+            if (isMatch == true) {
                 req.sessioncookie.user = user;
                 console.log(`Welcome ${user.nickname}`);
                 return res.status(200).send();
@@ -92,7 +93,7 @@ router.post('/login',(req, res) => {
 // @desc    DELETE An Account
 // @acess   Public
 router.delete('/delete/:id', (req, res) => {
-    
+
     Account.findById(req.params.id)
         .then(account => account.remove().then(() => res.status(400).json(("Account berhasil dihapus"))))
         .catch(err => res.status(400).json(("Account gagal dihapus")));
