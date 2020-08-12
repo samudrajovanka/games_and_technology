@@ -103,5 +103,5 @@ dist
 # TernJS port file
 .tern-port
 
-# ignored files
+# ignored files dependencies
 /node_modules
