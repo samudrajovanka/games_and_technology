@@ -31,7 +31,7 @@ const upload = multer({
     fileFilter: fileFilter
 });
 
-//item Model
+// Load Account Model
 const Account = require('../../models/Account');
 
 // @route   GET api/Accounts
@@ -47,14 +47,21 @@ router.get('/', (req, res) => {
 // @desc    Create An Account
 // @acess   Public
 router.post('/register', upload.single('accountImage'), (req, res) => {
+    Account.findOne({ email: req.body.email })
+        .then(user => {
+            if (user) {
+                return res.status(400).json({ email: "Email already exists" });
+            } else {
+                const newAccount = new Account({
+                    email: req.body.email,
+                    nickname: req.body.nickname,
+                    password: req.body.password,
+                    accountImage: req.file.path
+                });
+                newAccount.save().then(account => res.json(account));
+            }
+        })
     console.log(req.file);
-    const newAccount = new Account({
-        email: req.body.email,
-        nickname: req.body.nickname,
-        password: req.body.password,
-        accountImage: req.file.path
-    });
-    newAccount.save().then(account => res.json(account));
 });
 
 // @route   POST api/account

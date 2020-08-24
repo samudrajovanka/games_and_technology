@@ -3,6 +3,14 @@ const bodyParser = require('body-parser');
 const app = express();
 const session = require('client-sessions');
 
+// ENDPOINT 
+const endpoint = "./routes/api";
+
+// Import api
+const home = require(`${endpoint}/home`);
+const items = require(`${endpoint}/items`);
+const accounts = require(`${endpoint}/accounts`);
+
 // Session Middleware 
 app.use(session({
     cookieName: "sessioncookie",
@@ -12,25 +20,20 @@ app.use(session({
 }));
 
 // Bodyparser Middleware
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // DB CONFIG
 const connectDB = require('./config/db');
 connectDB();
 
-// ENDPOINT 
-const endpoint = "./routes/api";
-
 // HOME
-const home = require(`${endpoint}/home`);
 app.use('/', home);
 
 // Items 
-const items = require(`${endpoint}/items`);
 app.use('/api/items', items);
 
 // Accounts
-const accounts = require(`${endpoint}/accounts`);
 app.use('/api/accounts', accounts);
 app.use('/accountphoto', express.static('accountphoto'));
 
