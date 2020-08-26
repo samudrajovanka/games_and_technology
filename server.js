@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const dotenv = require("dotenv").config();
 const app = express();
 const passport = require("passport");
 const session = require("client-sessions");

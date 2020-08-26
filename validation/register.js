@@ -7,7 +7,7 @@ module.exports = validateRegisterInput = (data) => {
   data.nickname = !isEmpty(data.nickname) ? data.nickname : "";
   data.email = !isEmpty(data.email) ? data.email : "";
   data.password = !isEmpty(data.password) ? data.password : "";
-  data.password2 = !isEmpty(data.password2) ? data.password2 : "";
+  data.confirmPassword = !isEmpty(data.confirmPassword) ? data.confirmPassword : "";
 
   if (!Validator.isLength(data.nickname, { min: 5, max: 30 })) {
     errors.nickname = "Nickname must be between 5 and 30 characters";
@@ -30,11 +30,11 @@ module.exports = validateRegisterInput = (data) => {
   if (Validator.equals(data.password, data.nickname)) {
     errors.password = "Password and Nickname must not be same";
   }
-  if (Validator.isEmpty(data.password2)) {
-    errors.password2 = "Confirm Password field is required";
+  if (Validator.isEmpty(data.confirmPassword)) {
+    errors.confirmPassword = "Confirm Password field is required";
   }
-  if (!Validator.equals(data.password, data.password2)) {
-    errors.password2 = "Password must match";
+  if (!Validator.equals(data.password, data.confirmPassword)) {
+    errors.confirmPassword = "Password must match";
   }
   return {
     errors,

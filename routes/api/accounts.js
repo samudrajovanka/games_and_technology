@@ -27,7 +27,7 @@ const fileFilter = (req, file, callback) => {
     callback(null, false);
   }
 };
-// LIMIT PHOTO SIZE
+// UPLOAD PHOTO SIZE
 const upload = multer({
   storage: accountStorage,
   limits: {
@@ -55,37 +55,48 @@ router.get("/", (req, res) => {
 // @route   REGISTER api/account
 // @desc    Create An Account
 // @acess   Public
-router.post("/register", upload.single("accountImage"), (req, res) => {
+router.post("/register", (req, res) => {
+  console.log(req.body);
   const { errors, isValid } = validateRegisterInput(req.body);
   // CHECK VALIDATION
   if (!isValid) {
     return res.status(400).json(errors);
   }
 
-  Account.findOne({ email: req.body.email }).then((user) => {
+  Account.findOne({ nickname: req.body.nickname }).then((user) => {
     if (user) {
-      return res.status(400).json({ email: "Email already exists" });
+      return res.status(400).json({ nickname: "Nickname already exists" });
     } else {
-      const newAccount = new Account({
-        email: req.body.email,
-        nickname: req.body.nickname,
-        password: req.body.password,
-      });
+      Account.findOne({ email: req.body.email }).then((user) => {
+        if (user) {
+          return res.status(400).json({ email: "Email already exists" });
+        } else {
+          const newAccount = new Account({
+            role: req.body.role,
+            nickname: req.body.nickname,
+            email: req.body.email,
+            password: req.body.password,
+            accountImage: "../accountphoto/default_user.png",
+            instagram: req.body.instagram,
+            twitter: req.body.twitter,
+            steam: req.body.steam
+          });
 
-      bcrypt.genSalt(SALT_WORK_FACTOR, (err, salt) => {
-        bcrypt.hash(newAccount.password, salt, (err, hash) => {
-          if (err) throw err;
-          newAccount.password = hash;
-          newAccount
-            .save()
-            .then((user) => res.json(user))
-            .catch((err) => console.log(err));
-        });
-      });
+          bcrypt.genSalt(SALT_WORK_FACTOR, (err, salt) => {
+            bcrypt.hash(newAccount.password, salt, (err, hash) => {
+              if (err) throw err;
+              newAccount.password = hash;
+              newAccount
+                .save()
+                .then((user) => res.json(user))
+                .catch((err) => console.log(err));
+            });
+          });
+        }
+
+      })
     }
   });
-
-  //   console.log(req.file);
 });
 
 // @route   POST api/account

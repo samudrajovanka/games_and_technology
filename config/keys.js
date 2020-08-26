@@ -1,5 +1,4 @@
 module.exports = {
-  uri:
-    "mongodb+srv://wavesolid:sadam2903@gamesandtechno.cmiid.gcp.mongodb.net/gamesandtechno?retryWrites=true&w=majority",
+  uri: process.env.MONGODB_URI,
   secretOrKey: "secret",
 };
