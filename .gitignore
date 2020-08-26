@@ -105,3 +105,6 @@ dist
 
 # ignored files dependencies
 /node_modules
+
+# ignored .env file
+.env
