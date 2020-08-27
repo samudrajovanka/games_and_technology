@@ -1,7 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const dotenv = require("dotenv").config();
+require("dotenv").config();
 const app = express();
 const passport = require("passport");
 const session = require("client-sessions");
@@ -13,6 +13,7 @@ const endpoint = "./routes/api";
 const home = require(`${endpoint}/home`);
 const items = require(`${endpoint}/items`);
 const accounts = require(`${endpoint}/accounts`);
+const roles = require(`${endpoint}/roles`);
 
 // Session Middleware
 //  app.use(
@@ -33,7 +34,11 @@ const db = require("./config/keys").uri;
 
 // CONNECT TO MongoDB
 mongoose
-  .connect(db, { useUnifiedTopology: true, useNewUrlParser: true })
+  .connect(db, {
+    useUnifiedTopology: true,
+    useNewUrlParser: true,
+    useCreateIndex: true
+  })
   .then(() => console.log("Database Connected...!"))
   .catch((err) => console.log(err));
 
@@ -45,7 +50,10 @@ app.use("/api/items", items);
 
 // Accounts
 app.use("/api/accounts", accounts);
-app.use("/accountphoto", express.static("accountphoto"));
+app.use("/account-photo", express.static("accountPhoto"));
+
+// Role
+app.use("/api/roles", roles);
 
 // PASSPORT middleware
 app.use(passport.initialize());
