@@ -11,7 +11,7 @@ const endpoint = "./routes/api";
 
 // Import api
 const home = require(`${endpoint}/home`);
-const items = require(`${endpoint}/items`);
+const admin = require(`${endpoint}/admin`);
 const accounts = require(`${endpoint}/accounts`);
 const roles = require(`${endpoint}/roles`);
 
@@ -37,7 +37,7 @@ mongoose
   .connect(db, {
     useUnifiedTopology: true,
     useNewUrlParser: true,
-    useCreateIndex: true
+    useCreateIndex: true,
   })
   .then(() => console.log("Database Connected...!"))
   .catch((err) => console.log(err));
@@ -46,14 +46,11 @@ mongoose
 app.use("/", home);
 
 // Items
-app.use("/api/items", items);
+app.use("/api/admin", admin);
 
 // Accounts
 app.use("/api/accounts", accounts);
 app.use("/account-photo", express.static("accountPhoto"));
-
-// Role
-app.use("/api/roles", roles);
 
 // PASSPORT middleware
 app.use(passport.initialize());

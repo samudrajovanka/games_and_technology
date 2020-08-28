@@ -6,9 +6,13 @@ const RoleSchema = new Schema({
   role: {
     type: String,
     unique: true,
-    required: true
+    required: true,
   },
-})
+  admin: {
+    type: Boolean,
+    required: true,
+  },
+});
 
 // Schema Account
 const AccountSchema = new Schema({
@@ -35,7 +39,7 @@ const AccountSchema = new Schema({
     },
     steam: {
       type: String,
-    }
+    },
   },
   roleId: {
     type: Schema.Types.ObjectId,
@@ -52,5 +56,5 @@ const AccountSchema = new Schema({
 
 module.exports = {
   Account: mongoose.model("account", AccountSchema),
-  Role: mongoose.model("role", RoleSchema)
-}
+  Role: mongoose.model("role", RoleSchema),
+};
