@@ -48,10 +48,14 @@ const AccountSchema = new Schema({
   accountImage: {
     type: Object,
   },
-  date: {
+  createdAt: {
     type: Date,
     default: Date.now,
   },
+  updateAt: {
+    type: Date,
+    default: Date.now,
+  }
 });
 
 module.exports = {

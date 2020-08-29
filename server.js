@@ -1,12 +1,11 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-require("dotenv").config();
 const app = express();
 const passport = require("passport");
-const session = require("client-sessions");
+require("dotenv").config();
 
-// ENDPOINT
+// Endpoint
 const endpoint = "./routes/api";
 
 // Import api
@@ -14,25 +13,22 @@ const home = require(`${endpoint}/home`);
 const admin = require(`${endpoint}/admin`);
 const accounts = require(`${endpoint}/accounts`);
 const roles = require(`${endpoint}/roles`);
+const permissions = require(`${endpoint}/permissions`);
 
-// Session Middleware
-//  app.use(
-//   session({
-//     cookieName: "sessioncookie",
-//     secret: "long_string_which is_hard_to_crack",
-//     duration: 30 * 60 * 1000,
-//     activeDuration: 5 * 60 * 1000,
-//   })
-//  );
+// import uri for mongodb
+const db = require("./config/keys").uri;
 
 // Bodyparser Middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-// DB CONFIG
-const db = require("./config/keys").uri;
+// Passport middleware
+app.use(passport.initialize());
 
-// CONNECT TO MongoDB
+// Passport CONFIG
+require("./config/passport")(passport);
+
+// Connect TO MongoDB
 mongoose
   .connect(db, {
     useUnifiedTopology: true,
@@ -42,21 +38,13 @@ mongoose
   .then(() => console.log("Database Connected...!"))
   .catch((err) => console.log(err));
 
-// HOME
+// routes
 app.use("/", home);
-
-// Items
-app.use("/api/admin", admin);
-
-// Accounts
 app.use("/api/accounts", accounts);
+app.use("/api/admin", admin);
+app.use("/api/admin/roles", roles);
+app.use("/api/admin/permissions", permissions);
 app.use("/account-photo", express.static("accountPhoto"));
-
-// PASSPORT middleware
-app.use(passport.initialize());
-
-// PASSPORT CONFIG
-require("./config/passport")(passport);
 
 // PORT CONNECTION
 const port = process.env.PORT || 5000;

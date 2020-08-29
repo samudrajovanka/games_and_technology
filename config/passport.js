@@ -12,6 +12,7 @@ module.exports = (passport) => {
   passport.use(
     new JwtStrategy(option, (jwt_payload, done) => {
       User.findById(jwt_payload.id)
+        .populate("roleId")
         .then((user) => {
           if (user) {
             return done(null, user);

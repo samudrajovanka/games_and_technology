@@ -1,11 +1,23 @@
 const express = require("express");
 const router = express.Router();
-const app = express();
 const multer = require("multer");
 const bcrypt = require("bcrypt");
-const keys = require("../../config/keys");
 const jwt = require("jsonwebtoken");
-const passport = require("passport");
+const keys = require("../../config/keys");
+
+// Load Authentication
+const { userAuth, authAdmin } = require("../../utils/auth");
+
+// Load Permissions Register
+const permission = require("../../utils/permission");
+
+// Load input validation
+const validateRegisterInput = require("../../validation/register");
+const validateLoginInput = require("../../validation/login");
+
+// Load model
+const Post = require("../../models/Post");
+const { Account, Role } = require("../../models/Account");
 
 // LOCATION SAVING PHOTO FOR ACCOUNT
 const accountStorage = multer.diskStorage({
@@ -36,27 +48,32 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
-// Load Authen Admin
-const { authAdmin } = require("../../authentication/admin");
-// Load Permis Register
-const { canRegister } = require("../../permission/register");
-// Load input validation
-const validateRegisterInput = require("../../validation/register");
-const validateLoginInput = require("../../validation/login");
-
-//item Model
-const roles = require("./roles");
-const Post = require("../../models/Post");
-const { Account, Role } = require("../../models/Account");
+// @route   GET api/account/all
+// @desc    Get All Account Admin
+// @acess   Private
+router.get(
+  "/all",
+  userAuth,
+  authAdmin,
+  (req, res) => {
+    Account.find()
+      .populate("roleId")
+      .exec((err, accounts) => {
+        if (err) return res.send(err)
+        accounts.map(account => {
+          if (account.roleId.admin) res.json(account)
+        })
+      })
+  }
+)
 
 // @route   POST api/account
 // @desc    Create An Account
-// @acess   Public
+// @acess   Private
 router.post(
   "/register",
-  passport.authenticate("jwt", { session: false }),
-  authAdmin,
-  canRegister,
+  userAuth,
+  permission("addAdmin"),
   (req, res) => {
     const { errors, isValid } = validateRegisterInput(req.body);
     // CHECK VALIDATION
@@ -64,12 +81,12 @@ router.post(
       return res.status(400).json(errors);
     }
 
-    Account.findOne({ nickname: req.body.nickname }).then((user) => {
-      if (user)
+    Account.findOne({ nickname: req.body.nickname }).then((account) => {
+      if (account)
         return res.status(400).json({ nickname: "Nickname already exists" });
 
-      Account.findOne({ email: req.body.email }).then((user) => {
-        if (user)
+      Account.findOne({ email: req.body.email }).then((account) => {
+        if (account)
           return res.status(400).json({ email: "Email already exists" });
 
         Role.findOne({ role: req.body.role }).then((role) => {
@@ -98,7 +115,7 @@ router.post(
               newAccount.password = hash;
               newAccount
                 .save()
-                .then((user) => res.json(user))
+                .then((account) => res.json(account))
                 .catch((err) => console.log(err));
             });
           });
@@ -111,77 +128,52 @@ router.post(
 // @route   POST api/admin/login
 // @desc    Login An Account Admin
 // @acess   Public
-router.post("/login", authAdmin, (req, res) => {
-  const { errors, isValid } = validateLoginInput(req.body);
-  // CHECK VALIDATION
-  if (!isValid) return res.status(400).json(errors);
-  const email = req.body.email;
-  const password = req.body.password;
+router.post(
+  "/login",
+  authAdmin,
+  (req, res) => {
+    const { errors, isValid } = validateLoginInput(req.body);
+    // CHECK VALIDATION
+    if (!isValid) return res.status(400).json(errors);
+    const email = req.body.email;
+    const password = req.body.password;
 
-  Account.findOne({ email }).then((user) => {
-    // check for user
-    if (!user) {
-      errors.email = "Email not found";
-      return res.status(404).json(errors);
-    }
+    Account.findOne({ email })
+      .populate("roleId")
+      .then((account) => {
+        // check for account
+        if (!account) {
+          errors.email = "Email not found";
+          return res.status(404).json(errors);
+        }
 
-    // check password
-    bcrypt.compare(password, user.password).then((isMatch) => {
-      if (isMatch) {
-        // User Matched
-        const payload = {
-          id: user.id,
-        }; // CREATE JWT Payload
+        // check password
+        bcrypt.compare(password, account.password).then((isMatch) => {
+          if (isMatch) {
 
-        // Sign Token
-        jwt.sign(
-          payload,
-          keys.secretOrKey,
-          {
-            expiresIn: 3601,
-            algorithm: "HS256",
-          },
-          (err, token) => {
-            res.json({ success: true, token: "Bearer " + token });
+            // User Matched
+            const payload = {
+              id: account.id,
+            }; // CREATE JWT Payload
+
+            // Sign Token
+            jwt.sign(
+              payload,
+              keys.secretOrKey,
+              {
+                expiresIn: 3601,
+                algorithm: "HS256",
+              },
+              (err, token) => {
+                res.json({ success: true, token: "Bearer " + token });
+              }
+            );
+          } else {
+            errors.password = "Password incorrect";
+            res.status(404).json(errors);
           }
-        );
-      } else {
-        errors.password = "Password incorrect";
-        res.status(404).json(errors);
-      }
-    });
+        });
+      });
   });
-});
-
-// @route   GET api/items
-// @desc    Get All items
-// @acess   Public
-router.get("/", (req, res) => {
-  Item.find()
-    .sort({ date: -1 })
-    .then((items) => res.json(items));
-});
-
-// @route   POST api/items
-// @desc    Create A Post
-// @acess   Public
-router.post("/", (req, res) => {
-  const newItem = new Item({
-    name: req.body.name,
-  });
-  newItem.save().then((item) => res.json(item));
-});
-
-// Role
-app.use("/roles", roles);
-
-// @route   DELETE api/items:id
-// @desc    DELETE A Post
-// @acess   Public
-router.delete("/:id", (req, res) => {
-  Item.findById(req.params.id)
-    .then((item) => item.remove().then(() => res.json({ success: true })))
-    .catch((err) => res.status(400).json({ success: false }));
-});
 
 module.exports = router;
