@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+const moment = require("moment");
+moment.locale("id");
 
 // Schema Role
 const RoleSchema = new Schema({
@@ -10,6 +12,10 @@ const RoleSchema = new Schema({
   },
   admin: {
     type: Boolean,
+    required: true,
+  },
+  desc: {
+    type: String,
     required: true,
   },
 });
@@ -50,12 +56,12 @@ const AccountSchema = new Schema({
   },
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: moment().format(),
   },
   updateAt: {
-    type: Date,
-    default: Date.now,
-  }
+    type: String,
+    default: moment().format(),
+  },
 });
 
 module.exports = {

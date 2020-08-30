@@ -13,7 +13,6 @@ const home = require(`${endpoint}/home`);
 const admin = require(`${endpoint}/admin`);
 const accounts = require(`${endpoint}/accounts`);
 const roles = require(`${endpoint}/roles`);
-const permissions = require(`${endpoint}/permissions`);
 
 // import uri for mongodb
 const db = require("./config/keys").uri;
@@ -34,16 +33,16 @@ mongoose
     useUnifiedTopology: true,
     useNewUrlParser: true,
     useCreateIndex: true,
+    useFindAndModify: false,
   })
   .then(() => console.log("Database Connected...!"))
-  .catch((err) => console.log(err));
+  .catch((err) => console.perlog(err));
 
 // routes
 app.use("/", home);
 app.use("/api/accounts", accounts);
 app.use("/api/admin", admin);
 app.use("/api/admin/roles", roles);
-app.use("/api/admin/permissions", permissions);
 app.use("/account-photo", express.static("accountPhoto"));
 
 // PORT CONNECTION

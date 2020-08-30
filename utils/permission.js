@@ -1,16 +1,12 @@
-const Permissions = require("../models/Permissions");
+const { Roles } = require("../models/Account");
 
-const permission = permission => (req, res, next) => {
-    Permissions.findOne({ permission: permission })
-        .then(permission => {
-            if (!permission.roles.includes(req.user.roleId.role)) {
-                return res.status(400).send({
-                    msg: "You no have access"
-                })
-            }
+const checkRole = (roles) => (req, res, next) => {
+  if (!roles.includes(req.user.roleId.role)) {
+    return res.status(403).send({
+      msg: "You don't have access",
+    });
+  }
+  next();
+};
 
-            next()
-        })
-}
-
-module.exports = permission
+module.exports = checkRole;
