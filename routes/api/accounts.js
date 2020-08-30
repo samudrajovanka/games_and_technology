@@ -52,9 +52,23 @@ router.get("/all", (req, res) => {
     .populate("roleId")
     .exec((err, accounts) => {
       if (err) return res.send(err);
-      accounts.map((account) => {
-        if (!account.roleId.admin) res.json(serializeUser(account));
-      });
+      if (accounts) {
+        const accountMember = accounts.filter((account) => {
+          return !account.roleId.admin;
+        });
+
+        if (accountMember.length !== 0) {
+          res.json(accountMember);
+        } else {
+          res.json({
+            msg: "No members",
+          });
+        }
+      } else {
+        res.json({
+          msg: "No members",
+        });
+      }
     });
 });
 

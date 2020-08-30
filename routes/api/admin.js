@@ -26,10 +26,11 @@ const { Account, Role } = require("../../models/Account");
 // LOCATION SAVING PHOTO FOR ACCOUNT
 const accountStorage = multer.diskStorage({
   destination: function (req, file, callback) {
-    callback(null, "./accountPhoto/");
+    callback(null, "./accountImage/");
   },
   filename: function (req, file, callback) {
-    callback(null, Date.now() + file.originalname);
+    const extension = "." + file.originalname.split(".")[1];
+    callback(null, Date.now() + req.user._id + extension);
   },
 });
 
@@ -60,9 +61,23 @@ router.get("/all", userAuth, authAdmin, (req, res) => {
     .populate("roleId")
     .exec((err, accounts) => {
       if (err) return res.send(err);
-      accounts.map((account) => {
-        if (account.roleId.admin) res.json(serializeUser(account));
-      });
+      if (accounts) {
+        const accountMember = accounts.filter((account) => {
+          return account.roleId.admin;
+        });
+
+        if (accountMember.length !== 0) {
+          res.json(accountMember);
+        } else {
+          res.json({
+            msg: "No admin",
+          });
+        }
+      } else {
+        res.json({
+          msg: "No admin",
+        });
+      }
     });
 });
 
@@ -172,16 +187,16 @@ router.post("/login", authAdmin, (req, res) => {
 router.get("/profile", userAuth, authAdmin, (req, res) => {
   Account.findById(req.user._id)
     .populate("roleId")
-    .exec((err, accounts) => {
+    .exec((err, account) => {
       if (err) return res.send(err);
-      res.send(serializeUser(accounts));
+      res.send(serializeUser(account));
     });
 });
 
 router.post(
   "/profile/update",
-  upload.single("accountImage"),
   userAuth,
+  upload.single("accountImage"),
   authAdmin,
   (req, res) => {
     const { errors, isValid } = validateUpdateInput(req.body, req.user);
@@ -192,8 +207,8 @@ router.post(
     if (req.body.nickname) accountUpdate.nickname = req.body.nickname;
     if (req.body.email) accountUpdate.email = req.body.email;
     if (req.body.newPassword) accountUpdate.password = req.body.newPassword;
-    if (req.body.accountImage)
-      accountUpdate.accountImage = req.file.accountImage;
+
+    if (req.file) accountUpdate.accountImage = req.file;
 
     accountUpdate.socialMedia = {};
     if (req.body.instagram)
@@ -201,12 +216,9 @@ router.post(
     if (req.body.twitter) accountUpdate.socialMedia.twitter = req.body.twitter;
     if (req.body.steam) accountUpdate.socialMedia.steam = req.body.steam;
 
-    accountUpdate.updateAt = moment().format();
-    console.log(moment().format());
-    console.log(accountUpdate.updateAt);
+    accountUpdate.updateAt = Date.now();
 
     Account.findById(req.user._id)
-      .populate("roleId")
       .then((account) => {
         if (account) {
           if (req.body.newPassword) {
@@ -222,7 +234,7 @@ router.post(
                 ).then((account) => res.json(account));
               });
             });
-          } else if (!req.body) {
+          } else if (req.body) {
             Account.findByIdAndUpdate(
               req.user.id,
               { $set: accountUpdate },

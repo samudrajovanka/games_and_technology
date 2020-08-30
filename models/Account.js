@@ -56,11 +56,11 @@ const AccountSchema = new Schema({
   },
   createdAt: {
     type: Date,
-    default: moment().format(),
+    default: Date.now(),
   },
   updateAt: {
-    type: String,
-    default: moment().format(),
+    type: Date,
+    default: Date.now(),
   },
 });
 

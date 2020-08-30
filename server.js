@@ -43,7 +43,7 @@ app.use("/", home);
 app.use("/api/accounts", accounts);
 app.use("/api/admin", admin);
 app.use("/api/admin/roles", roles);
-app.use("/account-photo", express.static("accountPhoto"));
+app.use("/account-photo", express.static("accountImage"));
 
 // PORT CONNECTION
 const port = process.env.PORT || 5000;
