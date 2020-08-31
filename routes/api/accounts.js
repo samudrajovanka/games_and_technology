@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const keys = require("../../config/keys");
@@ -14,35 +13,8 @@ const validateLoginInput = require("../../validation/login");
 
 // Load authentication
 const { userAuth, serializeUser } = require("../../utils/auth");
-
-// LOCATION SAVING PHOTO FOR ACCOUNT
-const accountStorage = multer.diskStorage({
-  destination: (req, file, callback) => {
-    callback(null, "./accountPhoto/");
-  },
-  filename: (req, file, callback) => {
-    callback(null, Date.now() + file.originalname);
-  },
-});
-
-// FILTER FILE TYPE
-const fileFilter = (req, file, callback) => {
-  // ACCEPT A PHOTO
-  if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
-    callback(null, true);
-  } else {
-    // REJECT A PHOTO
-    callback(null, false);
-  }
-};
-// UPLOAD PHOTO SIZE
-const upload = multer({
-  storage: accountStorage,
-  limits: {
-    fileSize: 1024 * 1024 * 5,
-  },
-  fileFilter: fileFilter,
-});
+// Load Upload Image
+const uploadImage = require("../../utils/uploadImage");
 
 // @route   GET api/cccounts
 // @desc    Get All Accounts member

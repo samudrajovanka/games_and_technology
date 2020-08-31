@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const moment = require("moment");
@@ -23,35 +22,10 @@ const validateUpdateInput = require("../../validation/update");
 // Load model
 const { Account, Role } = require("../../models/Account");
 
-// LOCATION SAVING PHOTO FOR ACCOUNT
-const accountStorage = multer.diskStorage({
-  destination: (req, file, callback) => {
-    callback(null, "./accountImage/");
-  },
-  filename: (req, file, callback) => {
-    const extension = "." + file.originalname.split(".")[1];
-    callback(null, Date.now() + req.user._id + extension);
-  },
-});
+// Load Upload Image
+const uploadImage = require("../../utils/uploadImage");
 
-// FILTER FILE TYPE
-const fileFilter = (req, file, callback) => {
-  // ACCEPT A PHOTO
-  if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
-    callback(null, true);
-  } else {
-    // REJECT A PHOTO
-    callback(null, false);
-  }
-};
 // UPLOAD PHOTO SIZE
-const upload = multer({
-  storage: accountStorage,
-  limits: {
-    fileSize: 1024 * 1024 * 5,
-  },
-  fileFilter: fileFilter,
-});
 
 // @route   GET api/account/all
 // @desc    Get All Account Admin
@@ -196,8 +170,8 @@ router.get("/profile", userAuth, authAdmin, (req, res) => {
 router.post(
   "/profile/update",
   userAuth,
-  upload.single("accountImage"),
   authAdmin,
+  uploadImage.single("accountImage"),
   (req, res) => {
     const { errors, isValid } = validateUpdateInput(req.body, req.user);
     if (!isValid) return res.status(400).json(errors);
