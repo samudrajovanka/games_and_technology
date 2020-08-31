@@ -25,10 +25,10 @@ const { Account, Role } = require("../../models/Account");
 
 // LOCATION SAVING PHOTO FOR ACCOUNT
 const accountStorage = multer.diskStorage({
-  destination: function (req, file, callback) {
+  destination: (req, file, callback) => {
     callback(null, "./accountImage/");
   },
-  filename: function (req, file, callback) {
+  filename: (req, file, callback) => {
     const extension = "." + file.originalname.split(".")[1];
     callback(null, Date.now() + req.user._id + extension);
   },

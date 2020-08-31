@@ -17,10 +17,10 @@ const { userAuth, serializeUser } = require("../../utils/auth");
 
 // LOCATION SAVING PHOTO FOR ACCOUNT
 const accountStorage = multer.diskStorage({
-  destination: function (req, file, callback) {
+  destination: (req, file, callback) => {
     callback(null, "./accountPhoto/");
   },
-  filename: function (req, file, callback) {
+  filename: (req, file, callback) => {
     callback(null, Date.now() + file.originalname);
   },
 });
