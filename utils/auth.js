@@ -8,9 +8,10 @@ const serializeUser = (user) => {
     _id: user._id,
     nickname: user.nickname,
     email: user.email,
+    accountImage: user.accountImage.path,
+    socialMedia: user.socialMedia,
     createdAt: user.createdAt,
     updateAt: user.upadteAt,
-    socialMedia: user.socialMedia,
   };
 };
 

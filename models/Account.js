@@ -1,7 +1,5 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const moment = require("moment");
-moment.locale("id");
 
 // Schema Role
 const RoleSchema = new Schema({

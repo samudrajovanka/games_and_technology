@@ -21,7 +21,7 @@ const fileFilter = (req, file, callback) => {
     callback(null, false);
   }
 };
-upload = multer({
+const upload = multer({
   storage: accountStorage,
   limits: {
     fileSize: 1024 * 1024 * 5,
