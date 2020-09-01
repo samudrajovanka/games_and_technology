@@ -1,15 +1,28 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const AccountRole = {
-  ADMIN: "Admin",
-  MEMBER: "Member",
-};
+// Schema Role
+const RoleSchema = new Schema({
+  role: {
+    type: String,
+    unique: true,
+    required: true,
+  },
+  admin: {
+    type: Boolean,
+    required: true,
+  },
+  desc: {
+    type: String,
+    required: true,
+  },
+});
 
-// CREATE SCHEMA
+// Schema Account
 const AccountSchema = new Schema({
   email: {
     type: String,
+    unique: true,
     required: true,
   },
   password: {
@@ -18,28 +31,38 @@ const AccountSchema = new Schema({
   },
   nickname: {
     type: String,
+    unique: true,
     required: true,
   },
-  instagram: {
-    type: String,
+  socialMedia: {
+    instagram: {
+      type: String,
+    },
+    twitter: {
+      type: String,
+    },
+    steam: {
+      type: String,
+    },
   },
-  twitter: {
-    type: String,
-  },
-  steam: {
-    type: String,
-  },
-  role: {
-    type: String,
-    default: AccountRole.MEMBER,
+  roleId: {
+    type: Schema.Types.ObjectId,
+    ref: "role",
   },
   accountImage: {
-    type: String,
+    type: Object,
   },
-  date: {
+  createdAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now(),
+  },
+  updateAt: {
+    type: Date,
+    default: Date.now(),
   },
 });
 
-module.exports = Account = mongoose.model("account", AccountSchema);
+module.exports = {
+  Account: mongoose.model("account", AccountSchema),
+  Role: mongoose.model("role", RoleSchema),
+};

@@ -1,101 +1,108 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const keys = require("../../config/keys");
-const passport = require("passport");
-SALT_WORK_FACTOR = 10;
 
-// LOCATION SAVING PHOTO FOR ACCOUNT
-const accountStorage = multer.diskStorage({
-  destination: function (req, file, callback) {
-    callback(null, "./accountphoto/");
-  },
-  filename: function (req, file, callback) {
-    callback(null, Date.now() + file.originalname);
-  },
-});
-
-// FILTER FILE TYPE
-const fileFilter = (req, file, callback) => {
-  // ACCEPT A PHOTO
-  if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
-    callback(null, true);
-  } else {
-    // REJECT A PHOTO
-    callback(null, false);
-  }
-};
-// UPLOAD PHOTO SIZE
-const upload = multer({
-  storage: accountStorage,
-  limits: {
-    fileSize: 1024 * 1024 * 5,
-  },
-  fileFilter: fileFilter,
-});
+// Load Account and Role Model
+const { Account, Role } = require("../../models/Account");
 
 // Load input validation
 const validateRegisterInput = require("../../validation/register");
 const validateLoginInput = require("../../validation/login");
 
-// Load Account Model
-const Account = require("../../models/Account");
+// Load authentication
+const { userAuth, serializeUser } = require("../../utils/auth");
+// Load Upload Image
+const uploadImage = require("../../utils/uploadImage");
 
-// @route   GET api/Accounts
-// @desc    Get All Accounts
+// @route   GET api/cccounts
+// @desc    Get All Accounts member
 // @acess   Public
-router.get("/", (req, res) => {
+router.get("/all", (req, res) => {
   Account.find()
-    .sort({ date: -1 })
-    .then((accounts) => res.json(accounts));
+    .populate("roleId")
+    .exec((err, accounts) => {
+      if (err) return res.send(err);
+      if (accounts) {
+        const accountMember = accounts.filter((account) => {
+          return !account.roleId.admin;
+        });
+
+        if (accountMember.length !== 0) {
+          res.json(accountMember);
+        } else {
+          res.json({
+            msg: "No members",
+          });
+        }
+      } else {
+        res.json({
+          msg: "No members",
+        });
+      }
+    });
 });
 
-// @route   REGISTER api/account
+// @route   POST api/account
 // @desc    Create An Account
 // @acess   Public
 router.post("/register", (req, res) => {
-  console.log(req.body);
   const { errors, isValid } = validateRegisterInput(req.body);
-  // CHECK VALIDATION
-  if (!isValid) {
-    return res.status(400).json(errors);
-  }
+
+  // Check validation
+  if (!isValid) return res.status(400).json(errors);
 
   Account.findOne({ nickname: req.body.nickname }).then((user) => {
-    if (user) {
-      return res.status(400).json({ nickname: "Nickname already exists" });
-    } else {
-      Account.findOne({ email: req.body.email }).then((user) => {
-        if (user) {
-          return res.status(400).json({ email: "Email already exists" });
-        } else {
-          const newAccount = new Account({
-            role: req.body.role,
-            nickname: req.body.nickname,
-            email: req.body.email,
-            password: req.body.password,
-            accountImage: "../accountphoto/default_user.png",
-            instagram: req.body.instagram,
-            twitter: req.body.twitter,
-            steam: req.body.steam
+    if (user)
+      return res.status(400).json({
+        nickname: "Nickname already exists",
+        success: false,
+      });
+
+    Account.findOne({ email: req.body.email }).then((user) => {
+      if (user)
+        return res.status(400).json({
+          email: "Email already exists",
+          success: false,
+        });
+
+      Role.findOne({ role: "member" }).then((role) => {
+        if (!role)
+          return res.status(404).send({
+            role: "Role not exist",
+            success: false,
           });
 
-          bcrypt.genSalt(SALT_WORK_FACTOR, (err, salt) => {
-            bcrypt.hash(newAccount.password, salt, (err, hash) => {
-              if (err) throw err;
-              newAccount.password = hash;
-              newAccount
-                .save()
-                .then((user) => res.json(user))
-                .catch((err) => console.log(err));
-            });
-          });
-        }
+        const newAccount = new Account({
+          roleId: role._id,
+          nickname: req.body.nickname,
+          email: req.body.email,
+          password: req.body.password,
+          accountImage: {
+            filename: "default_user.png",
+            path: "accountPhoto\\default_user.png",
+          },
+        });
 
-      })
-    }
+        SALT_WORK_FACTOR = parseInt(process.env.SALT_WORK_FACTOR);
+        bcrypt.genSalt(SALT_WORK_FACTOR, (err, salt) => {
+          bcrypt.hash(newAccount.password, salt, (err, hash) => {
+            if (err) throw err;
+            newAccount.password = hash;
+            newAccount
+              .save()
+              .then((user) => res.json(user))
+              .catch((err) =>
+                res.send({
+                  success: false,
+                  err: err,
+                })
+              );
+          });
+        });
+      });
+    });
   });
 });
 
@@ -104,10 +111,10 @@ router.post("/register", (req, res) => {
 // @acess   Public
 router.post("/login", (req, res) => {
   const { errors, isValid } = validateLoginInput(req.body);
-  // CHECK VALIDATION
-  if (!isValid) {
-    return res.status(400).json(errors);
-  }
+
+  // Check validation
+  if (!isValid) return res.status(400).json(errors);
+
   const email = req.body.email;
   const password = req.body.password;
 
@@ -124,17 +131,21 @@ router.post("/login", (req, res) => {
         // User Matched
         const payload = {
           id: user.id,
-          nickname: user.nickname,
-          accountImage: user.accountImage,
         }; // CREATE JWT Payload
 
         // Sign Token
         jwt.sign(
           payload,
           keys.secretOrKey,
-          { expiresIn: 3600 },
+          {
+            expiresIn: 3601,
+            algorithm: "HS256",
+          },
           (err, token) => {
-            res.json({ success: true, token: "Bearer " + token });
+            res.json({
+              success: true,
+              token: "Bearer " + token,
+            });
           }
         );
       } else {
@@ -148,22 +159,15 @@ router.post("/login", (req, res) => {
 // @route   POST api/account/current
 // @desc    Return current account
 // @acess   Private
-router.get(
-  "/current",
-  passport.authenticate("jwt", { session: false }),
-  (req, res) => {
-    res.json({
-      id: req.user.id,
-      nickname: req.user.nickname,
-      email: req.user.email,
-    });
-  }
-);
+router.get("/current", userAuth, (req, res) => {
+  res.json(serializeUser(req.user));
+});
 
+// ! That has not been completed
 // @route   DELETE api/account:id
 // @desc    DELETE An Account
 // @acess   Public
-router.delete("/delete/:id", (req, res) => {
+router.delete("/delete/:id", userAuth, (req, res) => {
   Account.findById(req.params.id)
     .then((account) =>
       account
