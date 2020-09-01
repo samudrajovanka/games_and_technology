@@ -45,7 +45,7 @@ router.get("/all", (req, res) => {
 });
 
 // @route   POST api/account
-// @desc    Create An Account
+// @desc    Create An Account Member
 // @acess   Public
 router.post("/register", (req, res) => {
   const { errors, isValid } = validateRegisterInput(req.body);
@@ -107,7 +107,7 @@ router.post("/register", (req, res) => {
 });
 
 // @route   POST api/account
-// @desc    Login An Account
+// @desc    Login An Account Member
 // @acess   Public
 router.post("/login", (req, res) => {
   const { errors, isValid } = validateLoginInput(req.body);
@@ -156,25 +156,97 @@ router.post("/login", (req, res) => {
   });
 });
 
-// @route   POST api/account/current
-// @desc    Return current account
-// @acess   Private
-router.get("/current", userAuth, (req, res) => {
-  res.json(serializeUser(req.user));
+// @route    GET api/accounts/profile/:id
+// @desc     Get Account Member
+// @access   Public
+router.get('/profile/:id', (req, res) => {
+  Account.findById(req.params.id)
+    .populate('roleId')
+    .exec((err, account) => {
+      if (err)
+        return res.json({
+          msg: 'Account not found',
+        });
+
+      if (account) res.send(serializeUser(account));
+    });
 });
 
-// ! That has not been completed
+// @route    PUT api/accounts/profile/update/:id
+// @desc     Update Account current Member
+// @access   Private
+router.put(
+  '/profile/update/:id',
+  userAuth,
+  uploadImage.single('accountImage'),
+  (req, res) => {
+    const { errors, isValid } = validateUpdateInput(req.body, req.user);
+    if (!isValid) return res.status(400).json(errors);
+
+    const accountUpdate = {};
+
+    if (req.body.nickname) accountUpdate.nickname = req.body.nickname;
+    if (req.body.email) accountUpdate.email = req.body.email;
+    if (req.body.newPassword) accountUpdate.password = req.body.newPassword;
+    if (req.file) accountUpdate.accountImage = req.file;
+
+    accountUpdate.updateAt = Date.now();
+
+    Account.findById(req.user._id)
+      .then((account) => {
+        if (account) {
+          if (req.body.newPassword) {
+            SALT_WORK_FACTOR = parseInt(process.env.SALT_WORK_FACTOR);
+            bcrypt.genSalt(SALT_WORK_FACTOR, (err, salt) => {
+              bcrypt.hash(accountUpdate.password, salt, (err, hash) => {
+                if (err) throw err;
+                accountUpdate.password = hash;
+                Account.findByIdAndUpdate(
+                  req.user.id,
+                  { $set: accountUpdate },
+                  { new: true }
+                ).then((account) => res.json(account));
+              });
+            });
+          } else if (req.body) {
+            Account.findByIdAndUpdate(
+              req.user.id,
+              { $set: accountUpdate },
+              { new: true }
+            ).then((account) => res.json(account));
+          } else {
+            res.status(502).json({ msg: 'There is no update in your profile' });
+          }
+        }
+      })
+      .catch((err) => res.send(err));
+  }
+);
+
 // @route   DELETE api/account:id
-// @desc    DELETE An Account
+// @desc    DELETE An Account Member
 // @acess   Public
-router.delete("/delete/:id", userAuth, (req, res) => {
-  Account.findById(req.params.id)
-    .then((account) =>
-      account
-        .remove()
-        .then(() => res.status(400).json("Account berhasil dihapus"))
-    )
-    .catch((err) => res.status(400).json("Account gagal dihapus"));
-});
+router.delete(
+  '/profile/delete/:id',
+  userAuth,
+  (req, res) => {
+    Account.findById(req.params.id)
+      .then((account) => {
+        if (!account)
+          return res.status(404).json({ account: 'account not found' });
+
+        account
+          .remove()
+          .then(() =>
+            res
+              .status(200)
+              .json({ msg: 'Account has been successfully deleted' })
+          );
+      })
+      .catch((err) => res.status(400).json({ msg: 'Delete unsuccessful' }));
+  }
+);
+
+
 
 module.exports = router;
