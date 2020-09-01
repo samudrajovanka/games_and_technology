@@ -98,7 +98,7 @@ router.post('/register', userAuth, checkRole(['operator']), (req, res) => {
           password: req.body.password,
           accountImage: {
             filename: 'default_user.png',
-            path: 'accountPhoto/default_user.png',
+            path: 'static/image/default_user.png',
           },
           socialMedia: {
             instagram: req.body.instagram,
