@@ -1,4 +1,5 @@
-const router = require('express').Router;
+const express = require('express');
+const router = express.Router();
 const slugify = require('slugify');
 
 // Load Models
@@ -6,22 +7,29 @@ const { Content } = require('../../models/Content');
 const { Account, Role } = require('../../models/Account');
 
 // Load Authentication
-const { userAuth, authAdmin } = require('../../utils/auth.js');
+const { userAuth, authAdmin, serializeUser } = require('../../utils/auth.js');
 
 // Load Permission
 const checkRoles = require('../../utils/permission.js');
-const Account = require('../../models/Account');
 
-
+// Load upload image
+const uploadImage = require('../../utils/uploadImage');
 
 // @route   GET api/admin/contents/all
-// @desc     GET All Post
+// @desc    GET All Post
 // @acess   Public
-// router.get('/all', (req,res) => {
-//     Content.find()
-//     .populate()
-//     .
-// })
+router.get('/all', (req, res) => {
+  Content.find()
+    .populate('author')
+    .exec((err, contents) => {
+      if (err) return res.send(err);
+
+      contents.map((content) => {
+        content.author = serializeUser(content.author);
+        res.json(content);
+      });
+    });
+});
 
 // @route   POST api/admin/contents/create
 // @desc    Create new post
@@ -29,6 +37,7 @@ const Account = require('../../models/Account');
 router.post(
   '/create',
   userAuth,
+  uploadImage.single('imageContent'),
   authAdmin,
   checkRoles(['operator', 'modGame', 'modTech']),
   (req, res) => {
@@ -51,7 +60,7 @@ router.post(
               typeAccess = 'game';
               break;
             case 'modTech':
-              typeAccess = 'tech';
+              typeAccess = 'technology';
               break;
           }
 
@@ -59,13 +68,42 @@ router.post(
             return res.status(403).json({
               typeContent: "You're role is forbidden to post in this section",
             });
+          } else if (typeAccess === undefined) {
+            return res.status(400).json({
+              success: false,
+              content: 'Something went wrong',
+            });
           }
 
           const newContent = new Content({
-
+            author: req.user._id,
+            title: req.body.title,
+            imageContent: req.file,
+            fieldContent: req.body.fieldContent,
+            typeContent: req.body.typeContent,
+            genreContent: req.body.genreContent,
+            tagContent: req.body.tagContent.split(' '),
+            slug: slugify(req.body.title, { lower: true }),
           });
+
+          newContent
+            .save()
+            .then((content) =>
+              res.status(200).json({
+                success: true,
+                content: 'Your content has been delivered to operator',
+              })
+            )
+            .catch((err) =>
+              res.status(400).json({
+                success: false,
+                content: 'Something went wrong',
+              })
+            );
         })
         .catch((err) => res.json(err));
     });
   }
 );
+
+module.exports = router;

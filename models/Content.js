@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
-const schema = mongoose.Schema;
+const Schema = mongoose.Schema;
 
-const ContentSchema = new schema({
+const ContentSchema = new Schema({
   author: {
     type: Schema.Types.ObjectId,
     ref: 'account',
@@ -13,7 +13,6 @@ const ContentSchema = new schema({
   },
   imageContent: {
     type: Object,
-    required: true,
   },
   fieldContent: {
     type: String,
@@ -28,8 +27,12 @@ const ContentSchema = new schema({
     required: true,
   },
   tagContent: {
-    type: String,
+    type: Array,
     required: true,
+  },
+  isPublish: {
+    type: Boolean,
+    default: false,
   },
   createdAt: {
     type: Date,

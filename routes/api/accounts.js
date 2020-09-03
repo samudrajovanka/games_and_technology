@@ -26,11 +26,14 @@ router.get('/all', (req, res) => {
       if (err) return res.send(err);
       if (accounts) {
         const accountMember = accounts.filter((account) => {
-          return !account.roleId.admin;
+          return !account.roleId.isAdmin;
         });
 
         if (accountMember.length !== 0) {
-          res.json(accountMember);
+          const accountMemberSerialize = accountsMember.map((accountMember) => {
+            return serializeUser(accountMember);
+          });
+          res.json(accountMemberSerialize);
         } else {
           res.json({
             msg: 'No members',
@@ -178,7 +181,7 @@ router.get('/profile/:id', (req, res) => {
 router.put(
   '/profile/update/:id',
   userAuth,
-  uploadImage.single('accountImage'),
+  uploadImage.single('static'),
   (req, res) => {
     const { errors, isValid } = validateUpdateInput(req.body, req.user);
     if (!isValid) return res.status(400).json(errors);

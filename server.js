@@ -3,7 +3,6 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const app = express();
 const passport = require('passport');
-const content = require('./models/content');
 require('dotenv').config();
 
 // Endpoint
@@ -14,7 +13,8 @@ const home = require(`${endpoint}/home`);
 const admin = require(`${endpoint}/admin`);
 const accounts = require(`${endpoint}/accounts`);
 const roles = require(`${endpoint}/roles`);
-const content = require(`${endpoint}/contents`);
+const contents = require(`${endpoint}/contents`);
+
 // import uri for mongodb
 const db = require('./config/keys').uri;
 
@@ -44,8 +44,9 @@ app.use('/', home);
 app.use('/api/accounts', accounts);
 app.use('/api/admin', admin);
 app.use('/api/admin/roles', roles);
-app.use('/api/admin/contents', content);
+app.use('/api/admin/contents', contents);
 app.use('/static', express.static('static'));
+
 // PORT CONNECTION
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server started on port ${port}`));

@@ -123,7 +123,7 @@ router.post('/register', userAuth, checkRole(['operator']), (req, res) => {
   });
 });
 
-// @route   GET api/account/all
+// @route   GET api/admin/all
 // @desc    Get All Account Admin
 // @acess   Private
 router.get('/all', userAuth, authAdmin, (req, res) => {
@@ -132,12 +132,15 @@ router.get('/all', userAuth, authAdmin, (req, res) => {
     .exec((err, accounts) => {
       if (err) return res.send(err);
       if (accounts) {
-        const accountMember = accounts.filter((account) => {
-          return account.roleId.admin;
+        const accountsAdmin = accounts.filter((account) => {
+          return account.roleId.isAdmin;
         });
 
-        if (accountMember.length !== 0) {
-          res.json(accountMember);
+        if (accountsAdmin.length !== 0) {
+          const accountAdminSerialize = accountsAdmin.map((accountAdmin) => {
+            return serializeUser(accountAdmin);
+          });
+          res.json(accountAdminSerialize);
         } else {
           res.json({
             msg: 'No admin',
@@ -174,7 +177,7 @@ router.put(
   '/profile/update/:id',
   userAuth,
   authAdmin,
-  uploadImage.single('accountImage'),
+  uploadImage.single('static'),
   (req, res) => {
     const { errors, isValid } = validateUpdateInput(req.body, req.user);
     if (!isValid) return res.status(400).json(errors);
