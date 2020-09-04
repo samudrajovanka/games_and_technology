@@ -1,18 +1,15 @@
 const Validator = require("validator");
 const isEmpty = require("./is-empty");
 
-module.exports = validateUpdatePots = (data, file, currentData) => {
+module.exports = validateUpdatePots = (data, file) => {
   let errors = {};
 
-  if (data.newTitle) {
-    if (Validator.isEmpty(data.newTitle)) {
+  if (data.title) {
+    if (Validator.isEmpty(data.title)) {
       errors.title = "Title field is required";
     }
-    if (!Validator.isLength(data.newTitle, { min: 5, max: 256 })) {
+    if (!Validator.isLength(data.title, { min: 5, max: 256 })) {
       errors.title = "Title must be between 5 and 256 characters";
-    }
-    if (Validator.equals(data.newTitle, currentData.Title)) {
-      errors.title = "You entered same title";
     }
   }
 
@@ -25,17 +22,19 @@ module.exports = validateUpdatePots = (data, file, currentData) => {
     }
   }
 
-  if (isEmpty(file)) {
-    errors.imageContent = "Image field is required";
+  if (data.imageContent) {
+    if (isEmpty(file)) {
+      errors.imageContent = "Image field is required";
+    }
   }
 
   if (data.genreContent) {
     if (Validator.isEmpty(data.genreContent)) {
       errors.genreContent = "Genre field is required";
     }
-    return {
-      errors,
-      isValid: isEmpty(errors),
-    };
   }
+  return {
+    errors,
+    isValid: isEmpty(errors),
+  };
 };

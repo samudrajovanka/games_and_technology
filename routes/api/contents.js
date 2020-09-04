@@ -121,33 +121,40 @@ router.put(
   "/edit/:slug",
   userAuth,
   authAdmin,
-  uploadImage.single("static"),
+  uploadImage.single("imageContent"),
   (req, res) => {
-    const { errors, isValid } = validateEditPost(req.body, req.post);
-    if (!isValid) return res.status(400).json(errors);
+    Content.findOne({ slug: req.params.slug })
+      .then((content) => {
+        if (JSON.stringify(content.author) !== JSON.stringify(req.user._id)) {
+          return res
+            .status(403)
+            .json({ msg: "only the writter who can edit this files" });
+        }
 
-    const contentUpdate = {};
+        if (content) {
+          const { errors, isValid } = validateEditPost(req.body);
+          if (!isValid) return res.status(400).json(errors);
 
-    if (req.body.newTitle) contentUpdate.title = req.body.newTitle;
-    if (req.body.fieldContent)
-      contentUpdate.fieldContent = req.body.fieldContent;
-    if (req.body.genreContent)
-      contentUpdate.genreContent = req.body.genreContent;
+          const contentUpdate = {};
 
-    if (req.file) contentUpdate.imageContent = req.file;
+          if (req.body.title) contentUpdate.title = req.body.title;
+          if (req.body.fieldContent)
+            contentUpdate.fieldContent = req.body.fieldContent;
+          if (req.body.genreContent)
+            contentUpdate.genreContent = req.body.genreContent;
+          if (req.file) contentUpdate.imageContent = req.file;
+          contentUpdate.slug = slugify(req.body.title, { lower: true });
+          contentUpdate.updatedAt = Date.now();
 
-    contentUpdate.updatedAt = Date.now();
-
-    Content.findById(req.post._id).then((content) => {
-      Content.findByIdAndUpdate(
-        req.post._id,
-        { $set: contentUpdate },
-        { new: true }
-      ).then((content) => res.json(content));
-    });
-    res
-      .status(502)
-      .json({ msg: "There is no change in this post" })
+          Content.findOneAndUpdate(
+            { slug: req.params.slug },
+            { $set: contentUpdate },
+            { new: true }
+          ).then((content) => res.json(content));
+        } else {
+          res.status(502).json({ msg: "There is no change on your post" });
+        }
+      })
       .catch((err) => res.send(err));
   }
 );
