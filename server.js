@@ -1,12 +1,12 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
+const express = require("express");
+const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
 const app = express();
-const passport = require('passport');
-require('dotenv').config();
+const passport = require("passport");
+require("dotenv").config();
 
 // Endpoint
-const endpoint = './routes/api';
+const endpoint = "./routes/api";
 
 // Import api
 const home = require(`${endpoint}/home`);
@@ -16,7 +16,7 @@ const roles = require(`${endpoint}/roles`);
 const contents = require(`${endpoint}/contents`);
 
 // import uri for mongodb
-const db = require('./config/keys').uri;
+const db = require("./config/keys").uri;
 
 // Bodyparser Middleware
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -26,7 +26,7 @@ app.use(bodyParser.json());
 app.use(passport.initialize());
 
 // Passport CONFIG
-require('./config/passport')(passport);
+require("./config/passport")(passport);
 
 // Connect TO MongoDB
 mongoose
@@ -36,16 +36,16 @@ mongoose
     useCreateIndex: true,
     useFindAndModify: false,
   })
-  .then(() => console.log('Database Connected...!'))
-  .catch((err) => console.perlog(err));
+  .then(() => console.log("Database Connected...!"))
+  .catch((err) => console.log(err));
 
 // routes
-app.use('/', home);
-app.use('/api/accounts', accounts);
-app.use('/api/admin', admin);
-app.use('/api/admin/roles', roles);
-app.use('/api/admin/contents', contents);
-app.use('/static', express.static('static'));
+app.use("/", home);
+app.use("/api/accounts", accounts);
+app.use("/api/admin", admin);
+app.use("/api/admin/roles", roles);
+app.use("/api/admin/contents", contents);
+app.use("/static", express.static("static"));
 
 // PORT CONNECTION
 const port = process.env.PORT || 5000;

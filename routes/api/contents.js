@@ -1,33 +1,39 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const slugify = require('slugify');
+const slugify = require("slugify");
 
 // Load Models
-const { Content } = require('../../models/Content');
-const { Account, Role } = require('../../models/Account');
+const { Content } = require("../../models/Content");
+const { Account, Role } = require("../../models/Account");
 
 // Load Authentication
-const { userAuth, authAdmin, serializeUser } = require('../../utils/auth.js');
+const { userAuth, authAdmin, serializeUser } = require("../../utils/auth.js");
 
 // Load Permission
-const checkRoles = require('../../utils/permission.js');
+const checkRoles = require("../../utils/permission.js");
 
 // Load upload image
-const uploadImage = require('../../utils/uploadImage');
+const uploadImage = require("../../utils/uploadImage");
+
+// Load Validation Create Post
+const validateCreatePost = require("../../validation/createPost");
+
+// Load Validation Edit Post
+const validateEditPost = require("../../validation/editPost");
 
 // @route   GET api/admin/contents/all
 // @desc    GET All Post
 // @acess   Public
-router.get('/all', (req, res) => {
+router.get("/all", (req, res) => {
   Content.find()
-    .populate('author')
+    .populate("author")
     .exec((err, contents) => {
       if (err) return res.send(err);
 
       contents.map((content) => {
         content.author = serializeUser(content.author);
-        res.json(content);
       });
+      res.json(contents);
     });
 });
 
@@ -35,32 +41,37 @@ router.get('/all', (req, res) => {
 // @desc    Create new post
 // @acess   Private
 router.post(
-  '/create',
+  "/create",
   userAuth,
-  uploadImage.single('imageContent'),
+  uploadImage.single("imageContent"),
   authAdmin,
-  checkRoles(['operator', 'modGame', 'modTech']),
+  checkRoles(["operator", "modGame", "modTech"]),
   (req, res) => {
+    const { errors, isValid } = validateCreatePost(req.body, req.file);
+    // CHECK VALIDATION
+    if (!isValid) {
+      return res.status(400).json(errors);
+    }
     Content.findOne({ title: req.body.title }).then((content) => {
       if (content)
         return res.status(400).json({
-          content: 'Title already exist',
+          content: "Title already exist",
           success: false,
         });
 
       Account.findById(req.user._id)
-        .populate('roleId')
+        .populate("roleId")
         .then((account) => {
           let typeAccess;
           switch (account.roleId.role) {
-            case 'operator':
+            case "operator":
               typeAccess = req.body.typeContent;
               break;
-            case 'modGame':
-              typeAccess = 'game';
+            case "modGame":
+              typeAccess = "game";
               break;
-            case 'modTech':
-              typeAccess = 'technology';
+            case "modTech":
+              typeAccess = "technology";
               break;
           }
 
@@ -71,7 +82,7 @@ router.post(
           } else if (typeAccess === undefined) {
             return res.status(400).json({
               success: false,
-              content: 'Something went wrong',
+              content: "Something went wrong",
             });
           }
 
@@ -82,7 +93,7 @@ router.post(
             fieldContent: req.body.fieldContent,
             typeContent: req.body.typeContent,
             genreContent: req.body.genreContent,
-            tagContent: req.body.tagContent.split(' '),
+            tagContent: req.body.tagContent.split(" "),
             slug: slugify(req.body.title, { lower: true }),
           });
 
@@ -91,18 +102,53 @@ router.post(
             .then((content) =>
               res.status(200).json({
                 success: true,
-                content: 'Your content has been delivered to operator',
+                content: "Your content has been delivered to operator",
               })
             )
             .catch((err) =>
               res.status(400).json({
                 success: false,
-                content: 'Something went wrong',
+                content: "Something went wrong",
               })
             );
         })
         .catch((err) => res.json(err));
     });
+  }
+);
+
+router.put(
+  "/edit/:slug",
+  userAuth,
+  authAdmin,
+  uploadImage.single("static"),
+  (req, res) => {
+    const { errors, isValid } = validateEditPost(req.body, req.post);
+    if (!isValid) return res.status(400).json(errors);
+
+    const contentUpdate = {};
+
+    if (req.body.newTitle) contentUpdate.title = req.body.newTitle;
+    if (req.body.fieldContent)
+      contentUpdate.fieldContent = req.body.fieldContent;
+    if (req.body.genreContent)
+      contentUpdate.genreContent = req.body.genreContent;
+
+    if (req.file) contentUpdate.imageContent = req.file;
+
+    contentUpdate.updatedAt = Date.now();
+
+    Content.findById(req.post._id).then((content) => {
+      Content.findByIdAndUpdate(
+        req.post._id,
+        { $set: contentUpdate },
+        { new: true }
+      ).then((content) => res.json(content));
+    });
+    res
+      .status(502)
+      .json({ msg: "There is no change in this post" })
+      .catch((err) => res.send(err));
   }
 );
 
