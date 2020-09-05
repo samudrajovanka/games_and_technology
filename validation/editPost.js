@@ -1,5 +1,5 @@
 const Validator = require("validator");
-const isEmpty = require("./is-empty");
+const isEmpty = require("./isEmpty");
 
 module.exports = validateUpdatePots = (data, file) => {
   let errors = {};
@@ -22,7 +22,7 @@ module.exports = validateUpdatePots = (data, file) => {
     }
   }
 
-  if (data.imageContent) {
+  if (file) {
     if (isEmpty(file)) {
       errors.imageContent = "Image field is required";
     }
