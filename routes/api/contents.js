@@ -118,6 +118,10 @@ router.post(
   }
 );
 
+// @route   POST api/admin/contents/edit/:slug
+// @desc    Edit a post
+// @acess   Private
+
 router.put(
   "/edit/:slug",
   userAuth,
@@ -184,6 +188,9 @@ router.put(
   }
 );
 
+// @route   POST api/admin/contents/delete/:slug
+// @desc    Delete a post
+// @acess   Private
 router.delete("/delete/:slug", userAuth, authAdmin, (req, res) => {
   Content.findOne({ slug: req.params.slug })
     .populate({
@@ -208,6 +215,63 @@ router.delete("/delete/:slug", userAuth, authAdmin, (req, res) => {
       content.remove({ slug: req.params.slug }).then(() => {
         return res.status(200).json({ msg: "Post succesfully deleted" });
       });
+    })
+    .catch((err) => res.send(err));
+});
+
+// @route   POST api/admin/contents/like/:slug
+// @desc    Likes a post
+// @acess   Private
+router.post("/like/:slug", userAuth, (req, res) => {
+  Content.findOne({ slug: req.params.slug })
+
+    .then((content) => {
+      if (
+        content.like.some(
+          (like) => like._id.toString() === req.user._id.toString()
+        )
+      )
+        return res.status(400).json({ msg: "You already liked this post" });
+
+      content.like.unshift(req.user._id);
+
+      content
+        .save({ slug: req.params.slug })
+        .then((content) => res.json(content));
+    })
+    .catch((err) => res.send(err));
+});
+
+// @route   POST api/admin/contents/unlike/:slug
+// @desc    Unlikes a post
+// @acess   Private
+
+router.post("/unlike/:slug", userAuth, (req, res) => {
+  Content.findOne({ slug: req.params.slug })
+    .then((content) => {
+      console.log(
+        content.like.some(
+          (like) => like._id.toString() === req.user._id.toString()
+        )
+      );
+
+      if (
+        content.like.some(
+          (like) => like._id.toString() === req.user._id.toString()
+        )
+      ) {
+        const removeLike = content.like.findIndex(
+          (account) => account._id === req.user._id
+        );
+
+        content.like.splice(removeLike, 1);
+
+        content
+          .save({ slug: req.params.slug })
+          .then((content) => res.json(content));
+      } else {
+        return res.status(400).json({ msg: "you haven't like the post" });
+      }
     })
     .catch((err) => res.send(err));
 });

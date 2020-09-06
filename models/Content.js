@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const ContentSchema = new Schema({
   author: {
     type: Schema.Types.ObjectId,
-    ref: 'account',
+    ref: "account",
   },
   title: {
     type: String,
@@ -46,7 +46,7 @@ const ContentSchema = new Schema({
     {
       account: {
         type: Schema.Types.ObjectId,
-        ref: 'account',
+        ref: "account",
       },
     },
   ],
@@ -54,7 +54,7 @@ const ContentSchema = new Schema({
     {
       account: {
         type: Schema.Types.ObjectId,
-        ref: 'account',
+        ref: "account",
       },
       fieldComment: {
         type: String,
@@ -74,5 +74,5 @@ const ContentSchema = new Schema({
 });
 
 module.exports = {
-  Content: mongoose.model('content', ContentSchema),
+  Content: mongoose.model("content", ContentSchema),
 };
