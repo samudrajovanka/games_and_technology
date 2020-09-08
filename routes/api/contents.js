@@ -219,7 +219,7 @@ router.delete("/delete/:slug", userAuth, authAdmin, (req, res) => {
     .catch((err) => res.send(err));
 });
 
-// @route   POST api/admin/contents/like/:slug
+// @route   POST api/contents/like/:slug
 // @desc    Likes a post
 // @acess   Private
 router.post("/like/:slug", userAuth, (req, res) => {
@@ -242,19 +242,13 @@ router.post("/like/:slug", userAuth, (req, res) => {
     .catch((err) => res.send(err));
 });
 
-// @route   POST api/admin/contents/unlike/:slug
+// @route   POST api/contents/unlike/:slug
 // @desc    Unlikes a post
 // @acess   Private
 
 router.post("/unlike/:slug", userAuth, (req, res) => {
   Content.findOne({ slug: req.params.slug })
     .then((content) => {
-      console.log(
-        content.like.some(
-          (like) => like._id.toString() === req.user._id.toString()
-        )
-      );
-
       if (
         content.like.some(
           (like) => like._id.toString() === req.user._id.toString()
@@ -271,6 +265,57 @@ router.post("/unlike/:slug", userAuth, (req, res) => {
           .then((content) => res.json(content));
       } else {
         return res.status(400).json({ msg: "you haven't like the post" });
+      }
+    })
+    .catch((err) => res.send(err));
+});
+
+// @route   POST api/admin/contents/comment/:slug
+// @desc    Comment a Post
+// @acess   Private
+
+router.post("/comment/:slug", userAuth, (req, res) => {
+  Content.findOne({ slug: req.params.slug })
+    .populate("account")
+    .then((content) => {
+      const newComment = {
+        account: req.user._id,
+        fieldComment: req.body.fieldComment,
+      };
+
+      content.comment.unshift(newComment);
+
+      content
+        .save({ slug: req.params.slug })
+        .then((content) => res.json(content));
+    })
+    .catch((err) =>
+      res.status(400).json({ Contentpost: "Content Post not found" })
+    );
+});
+
+// @route   POST api/admin/contents/comment/:slug
+// @desc    Comment a Post
+// @acess   Private
+
+router.delete("/comment/:slug/:comment_id", userAuth, (req, res) => {
+  Content.findOne({ slug: req.params.slug })
+    .then((content) => {
+      if (
+        content.comment.some(
+          (comment) =>
+            comment._id.toString() === req.params.comment_id.toString()
+        )
+      ) {
+        const removeComment = content.comment.findIndex(
+          (comment) => comment._id === req.params._id
+        );
+
+        content.comment.splice(removeComment, 1);
+
+        content
+          .save({ slug: req.params.slug })
+          .then((content) => res.json(content));
       }
     })
     .catch((err) => res.send(err));
