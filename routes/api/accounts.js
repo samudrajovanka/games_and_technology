@@ -1,44 +1,47 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const keys = require("../../config/keys");
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const keys = require('../../config/keys');
 
 // Load Account and Role Model
-const { Account, Role } = require("../../models/Account");
+const { Account, Role } = require('../../models/Account');
 
 // Load input validation
-const validateRegisterInput = require("../../validation/register");
-const validateLoginInput = require("../../validation/login");
+const validateRegisterInput = require('../../validation/register');
+const validateLoginInput = require('../../validation/login');
 
 // Load authentication
-const { userAuth, serializeUser } = require("../../utils/auth");
+const { userAuth, serializeUser } = require('../../utils/auth');
 // Load Upload Image
-const uploadImage = require("../../utils/uploadImage");
+const uploadImage = require('../../utils/uploadImage');
 
 // @route   GET api/cccounts
 // @desc    Get All Accounts member
 // @acess   Public
-router.get("/all", (req, res) => {
+router.get('/all', (req, res) => {
   Account.find()
-    .populate("roleId")
+    .populate('roleId')
     .exec((err, accounts) => {
       if (err) return res.send(err);
       if (accounts) {
         const accountMember = accounts.filter((account) => {
-          return !account.roleId.admin;
+          return !account.roleId.isAdmin;
         });
 
         if (accountMember.length !== 0) {
-          res.json(accountMember);
+          const accountMemberSerialize = accountsMember.map((accountMember) => {
+            return serializeUser(accountMember);
+          });
+          res.json(accountMemberSerialize);
         } else {
           res.json({
-            msg: "No members",
+            msg: 'No members',
           });
         }
       } else {
         res.json({
-          msg: "No members",
+          msg: 'No members',
         });
       }
     });
@@ -47,7 +50,7 @@ router.get("/all", (req, res) => {
 // @route   POST api/account
 // @desc    Create An Account Member
 // @acess   Public
-router.post("/register", (req, res) => {
+router.post('/register', (req, res) => {
   const { errors, isValid } = validateRegisterInput(req.body);
 
   // Check validation
@@ -56,21 +59,21 @@ router.post("/register", (req, res) => {
   Account.findOne({ nickname: req.body.nickname }).then((user) => {
     if (user)
       return res.status(400).json({
-        nickname: "Nickname already exists",
+        nickname: 'Nickname already exists',
         success: false,
       });
 
     Account.findOne({ email: req.body.email }).then((user) => {
       if (user)
         return res.status(400).json({
-          email: "Email already exists",
+          email: 'Email already exists',
           success: false,
         });
 
-      Role.findOne({ role: "member" }).then((role) => {
+      Role.findOne({ role: 'member' }).then((role) => {
         if (!role)
           return res.status(404).send({
-            role: "Role not exist",
+            role: 'Role not exist',
             success: false,
           });
 
@@ -80,8 +83,8 @@ router.post("/register", (req, res) => {
           email: req.body.email,
           password: req.body.password,
           accountImage: {
-            filename: "default_user.png",
-            path: "accountPhoto\\default_user.png",
+            filename: 'default_user.png',
+            path: 'static/image/default_user.png',
           },
         });
 
@@ -109,7 +112,7 @@ router.post("/register", (req, res) => {
 // @route   POST api/account
 // @desc    Login An Account Member
 // @acess   Public
-router.post("/login", (req, res) => {
+router.post('/login', (req, res) => {
   const { errors, isValid } = validateLoginInput(req.body);
 
   // Check validation
@@ -121,7 +124,7 @@ router.post("/login", (req, res) => {
   Account.findOne({ email }).then((user) => {
     // check for user
     if (!user) {
-      errors.email = "Email not found";
+      errors.email = 'Email not found';
       return res.status(404).json(errors);
     }
 
@@ -139,17 +142,17 @@ router.post("/login", (req, res) => {
           keys.secretOrKey,
           {
             expiresIn: 3601,
-            algorithm: "HS256",
+            algorithm: 'HS256',
           },
           (err, token) => {
             res.json({
               success: true,
-              token: "Bearer " + token,
+              token: 'Bearer ' + token,
             });
           }
         );
       } else {
-        errors.password = "Password incorrect";
+        errors.password = 'Password incorrect';
         res.status(404).json(errors);
       }
     });
@@ -178,7 +181,7 @@ router.get('/profile/:id', (req, res) => {
 router.put(
   '/profile/update/:id',
   userAuth,
-  uploadImage.single('accountImage'),
+  uploadImage.single('static'),
   (req, res) => {
     const { errors, isValid } = validateUpdateInput(req.body, req.user);
     if (!isValid) return res.status(400).json(errors);
@@ -226,27 +229,19 @@ router.put(
 // @route   DELETE api/account:id
 // @desc    DELETE An Account Member
 // @acess   Public
-router.delete(
-  '/profile/delete/:id',
-  userAuth,
-  (req, res) => {
-    Account.findById(req.params.id)
-      .then((account) => {
-        if (!account)
-          return res.status(404).json({ account: 'account not found' });
+router.delete('/profile/delete/:id', userAuth, (req, res) => {
+  Account.findById(req.params.id)
+    .then((account) => {
+      if (!account)
+        return res.status(404).json({ account: 'account not found' });
 
-        account
-          .remove()
-          .then(() =>
-            res
-              .status(200)
-              .json({ msg: 'Account has been successfully deleted' })
-          );
-      })
-      .catch((err) => res.status(400).json({ msg: 'Delete unsuccessful' }));
-  }
-);
-
-
+      account
+        .remove()
+        .then(() =>
+          res.status(200).json({ msg: 'Account has been successfully deleted' })
+        );
+    })
+    .catch((err) => res.status(400).json({ msg: 'Delete unsuccessful' }));
+});
 
 module.exports = router;

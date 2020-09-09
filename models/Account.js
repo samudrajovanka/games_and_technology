@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 // Schema Role
@@ -8,7 +8,7 @@ const RoleSchema = new Schema({
     unique: true,
     required: true,
   },
-  admin: {
+  isAdmin: {
     type: Boolean,
     required: true,
   },
@@ -47,7 +47,7 @@ const AccountSchema = new Schema({
   },
   roleId: {
     type: Schema.Types.ObjectId,
-    ref: "role",
+    ref: 'role',
   },
   accountImage: {
     type: Object,
@@ -63,6 +63,6 @@ const AccountSchema = new Schema({
 });
 
 module.exports = {
-  Account: mongoose.model("account", AccountSchema),
-  Role: mongoose.model("role", RoleSchema),
+  Account: mongoose.model('account', AccountSchema),
+  Role: mongoose.model('role', RoleSchema),
 };
