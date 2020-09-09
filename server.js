@@ -9,7 +9,6 @@ require("dotenv").config();
 const endpoint = "./routes/api";
 
 // Import api
-const home = require(`${endpoint}/home`);
 const admin = require(`${endpoint}/admin`);
 const accounts = require(`${endpoint}/accounts`);
 const roles = require(`${endpoint}/roles`);
@@ -40,7 +39,6 @@ mongoose
   .catch((err) => console.log(err));
 
 // routes
-app.use("/", home);
 app.use("/api/accounts", accounts);
 app.use("/api/admin", admin);
 app.use("/api/admin/roles", roles);

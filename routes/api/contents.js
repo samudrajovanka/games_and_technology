@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const fs = require("fs-extra");
 const slugify = require("slugify");
 
 // Load Models
@@ -130,6 +131,7 @@ router.put(
   (req, res) => {
     Content.findOne({ slug: req.params.slug })
       .then((content) => {
+        8;
         if (JSON.stringify(content.author) !== JSON.stringify(req.user._id)) {
           return res
             .status(403)
@@ -167,7 +169,17 @@ router.put(
                   if (req.body.genreContent)
                     contentUpdate.genreContent = req.body.genreContent;
                   if (req.file) contentUpdate.imageContent = req.file;
-
+                  if (req.contentImage) {
+                    try {
+                      fs.removeSync(content.imageContent.path);
+                    } catch (e) {
+                      res.status(400).send({
+                        message: "Error deleting image!",
+                        error: e.toString(),
+                        req: req.body,
+                      });
+                    }
+                  }
                   contentUpdate.updatedAt = Date.now();
 
                   Content.findOneAndUpdate(
@@ -205,13 +217,20 @@ router.delete("/delete/:slug", userAuth, authAdmin, (req, res) => {
         content.author._id !== req.user._id &&
         content.author.roleId.role !== "operator"
       ) {
-        console.log("oke");
         return res.status(403).json({
           msg:
             "only the Operator or the Admin who wrote this are able to delete the post",
         });
       }
-
+      try {
+        fs.removeSync(content.imageContent.path);
+      } catch (e) {
+        res.status(400).send({
+          message: "Error deleting image!",
+          error: e.toString(),
+          req: req.body,
+        });
+      }
       content.remove({ slug: req.params.slug }).then(() => {
         return res.status(200).json({ msg: "Post succesfully deleted" });
       });
@@ -233,6 +252,7 @@ router.post("/like/:slug", userAuth, (req, res) => {
       )
         return res.status(400).json({ msg: "You already liked this post" });
 
+      console.log(Date.now());
       content.like.unshift(req.user._id);
 
       content
@@ -276,7 +296,6 @@ router.post("/unlike/:slug", userAuth, (req, res) => {
 
 router.post("/comment/:slug", userAuth, (req, res) => {
   Content.findOne({ slug: req.params.slug })
-    .populate("account")
     .then((content) => {
       const newComment = {
         account: req.user._id,
