@@ -1,11 +1,11 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const bcrypt = require('bcrypt');
-const fs = require('fs-extra');
-const jwt = require('jsonwebtoken');
+const bcrypt = require("bcrypt");
+const fs = require("fs-extra");
+const jwt = require("jsonwebtoken");
 
 // Load Keys
-const keys = require('../../config/keys');
+const keys = require("../../config/keys");
 
 // Load Authentication
 const {
@@ -13,27 +13,27 @@ const {
   authAdmin,
   serializeUser,
   loginAdmin,
-} = require('../../utils/auth');
+} = require("../../utils/auth");
 
 // Load checkRole
-const { checkRoles, updateAccount } = require('../../utils/permission');
+const { checkRoles, updateAccount } = require("../../utils/permission");
 
 // Load input validation
-const validateRegisterInput = require('../../validation/register');
-const validateLoginInput = require('../../validation/login');
-const validateUpdateInput = require('../../validation/update');
+const validateRegisterInput = require("../../validation/register");
+const validateLoginInput = require("../../validation/login");
+const validateUpdateInput = require("../../validation/update");
 
 // Load model
-const { Account, Role } = require('../../models/Account');
+const { Account, Role } = require("../../models/Account");
 
 // Load Upload Image
-const uploadImage = require('../../utils/uploadImage');
-const isEmpty = require('../../validation/isEmpty');
+const uploadImage = require("../../utils/uploadImage");
+const isEmpty = require("../../validation/isEmpty");
 
 // @route   POST api/admin/login
 // @desc    Login An Account Admin
 // @acess   Public
-router.post('/login', loginAdmin, (req, res) => {
+router.post("/login", loginAdmin, (req, res) => {
   const { errors, isValid } = validateLoginInput(req.body);
 
   // check validation if field is empty
@@ -45,7 +45,7 @@ router.post('/login', loginAdmin, (req, res) => {
     // check for account
     if (!account) {
       errors.success = false;
-      errors.email = 'Email not found';
+      errors.email = "Email not found";
       return res.status(403).json(errors);
     }
 
@@ -63,7 +63,7 @@ router.post('/login', loginAdmin, (req, res) => {
           keys.secretOrKey,
           {
             expiresIn: 3600,
-            algorithm: 'HS256',
+            algorithm: "HS256",
           },
           (err, token) => {
             if (err)
@@ -74,13 +74,13 @@ router.post('/login', loginAdmin, (req, res) => {
 
             res.json({
               success: true,
-              token: 'Bearer ' + token,
+              token: "Bearer " + token,
             });
           }
         );
       } else {
         errors.success = false;
-        errors.password = 'Password incorrect';
+        errors.password = "Password incorrect";
         res.status(403).json(errors);
       }
     });
@@ -90,7 +90,7 @@ router.post('/login', loginAdmin, (req, res) => {
 // @route   POST api/account
 // @desc    Create An Account
 // @acess   Private
-router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
+router.post("/register", userAuth, checkRoles(["operator"]), (req, res) => {
   const { errors, isValid } = validateRegisterInput(req.body);
 
   // check validation
@@ -111,9 +111,9 @@ router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
           errors.success = false;
           alreadyAccount.map((account) => {
             if (account.nickname === req.body.nickname.toLowerCase())
-              errors.nickname = 'Nickname already exists';
+              errors.nickname = "Nickname already exists";
             else if (account.email === req.body.email.toLowerCase())
-              errors.email = 'Email already exists';
+              errors.email = "Email already exists";
           });
 
           return res.status(400).json(errors);
@@ -123,7 +123,7 @@ router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
           if (!role) {
             return res.status(400).send({
               success: false,
-              role: 'Role not exist',
+              role: "Role not exist",
             });
           }
 
@@ -133,8 +133,8 @@ router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
             email: req.body.email,
             password: req.body.password,
             accountImage: {
-              filename: 'default_user.png',
-              path: 'static/image/default_user.png',
+              filename: "default_user.png",
+              path: "static/image/default_user.png",
             },
             socialMedia: {
               instagram: req.body.instagram,
@@ -159,7 +159,7 @@ router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
     })
     .catch((err) =>
       res.status(500).json({
-        status: 'error',
+        status: "error",
         error: err,
       })
     );
@@ -168,13 +168,13 @@ router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
 // @route   GET api/admin/all
 // @desc    Get All Account Admin
 // @acess   Private
-router.get('/profile/all', userAuth, authAdmin, (req, res) => {
+router.get("/profile/all", userAuth, authAdmin, (req, res) => {
   Account.find()
-    .populate('roleId')
+    .populate("roleId")
     .exec((err, accounts) => {
       if (err)
         return res.status(500).json({
-          status: 'error',
+          status: "error",
           error: err,
         });
 
@@ -190,12 +190,12 @@ router.get('/profile/all', userAuth, authAdmin, (req, res) => {
           return res.status(200).json(accountAdminSerialize);
         } else {
           return res.status(200).json({
-            message: 'No admin',
+            message: "No admin",
           });
         }
       } else {
         return res.stauts(200).json({
-          message: 'No admin',
+          message: "No admin",
         });
       }
     });
@@ -204,21 +204,21 @@ router.get('/profile/all', userAuth, authAdmin, (req, res) => {
 // @route    GET api/admin/profile/:id
 // @desc     Get Account Admin
 // @access   Public
-router.get('/profile/:nickname', (req, res) => {
+router.get("/profile/:nickname", (req, res) => {
   Account.findOne({ nickname: req.params.nickname.toLowerCase() })
-    .populate('roleId')
+    .populate("roleId")
     .exec((err, account) => {
       if (err)
         return res.status(500).json({
-          status: 'error',
+          status: "error",
           error: err,
         });
 
       if (account) return res.send(serializeUser(account));
 
       return res.status(404).json({
-        status: 'error',
-        message: 'Page not found',
+        status: "error",
+        message: "Page not found",
       });
     });
 });
@@ -227,11 +227,11 @@ router.get('/profile/:nickname', (req, res) => {
 // @desc     Update Account current Admin
 // @access   Private
 router.put(
-  '/profile/update/:nickname',
+  "/profile/update/:nickname",
   userAuth,
   authAdmin,
   updateAccount,
-  uploadImage.single('accountImage'),
+  uploadImage.single("accountImage"),
   (req, res) => {
     const { errors, isValid } = validateUpdateInput(req.body, req.user);
     if (!isValid) return res.status(400).json(errors);
@@ -250,13 +250,13 @@ router.put(
     }
 
     if (req.file) {
-      if (req.user.accountImage.filename !== 'default_user.png') {
+      if (req.user.accountImage.filename !== "default_user.png") {
         try {
           fs.removeSync(req.user.accountImage.path);
         } catch (err) {
           return res.status(500).send({
-            status: 'error',
-            message: 'Error deleting image!',
+            status: "error",
+            message: "Error deleting image!",
             error: err,
           });
         }
@@ -302,20 +302,20 @@ router.put(
           } else {
             return res.status(200).json({
               success: true,
-              message: 'There is no update in your profile',
+              message: "There is no update in your profile",
             });
           }
         }
 
         if (!account)
           return res.status(404).json({
-            status: 'error',
-            message: 'Page not found',
+            status: "error",
+            message: "Page not found",
           });
       })
       .catch((err) =>
         res.status(500).json({
-          status: 'error',
+          status: "error",
           error: err,
         })
       );
@@ -326,37 +326,49 @@ router.put(
 // @desc    DELETE An Account admin
 // @acess   Private
 router.delete(
-  '/profile/delete/:nickname',
+  "/profile/delete/:nickname",
   userAuth,
   authAdmin,
-  checkRoles(['operator']),
+  checkRoles(["operator"]),
   (req, res) => {
     Account.findOne(req.params.nickname)
       .then((account) => {
         if (!account)
           return res.status(404).json({
-            status: 'error',
-            message: 'Page not found',
+            status: "error",
+            message: "Page not found",
           });
+
+        if (req.user.accountImage.filename !== "default_user.png") {
+          try {
+            fs.removeSync(req.user.accountImage.path);
+          } catch (err) {
+            return res.status(500).send({
+              status: "error",
+              message: "Error deleting image!",
+              error: err,
+            });
+          }
+        }
 
         account
           .remove()
           .then(() =>
             res.status(200).json({
               success: true,
-              message: 'Account has been successfully deleted',
+              message: "Account has been successfully deleted",
             })
           )
           .catch((err) => {
             return res.status(500).json({
               success: false,
-              message: 'Delete unsuccessful',
+              message: "Delete unsuccessful",
             });
           });
       })
       .catch((err) =>
         res.status(500).json({
-          status: 'error',
+          status: "error",
           error: err,
         })
       );
