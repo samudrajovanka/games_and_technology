@@ -12,7 +12,7 @@ const RoleSchema = new Schema({
     type: Boolean,
     required: true,
   },
-  desc: {
+  description: {
     type: String,
     required: true,
   },

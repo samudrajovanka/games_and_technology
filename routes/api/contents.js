@@ -1,34 +1,34 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const fs = require("fs-extra");
-const slugify = require("slugify");
+const fs = require('fs-extra');
+const slugify = require('slugify');
 
 // Load Models
-const { Content } = require("../../models/Content");
-const { Account, Role } = require("../../models/Account");
+const { Content } = require('../../models/Content');
+const { Account, Role } = require('../../models/Account');
 
 // Load Authentication
-const { userAuth, authAdmin, serializeUser } = require("../../utils/auth.js");
+const { userAuth, authAdmin, serializeUser } = require('../../utils/auth.js');
 
 // Load Permission
-const checkRoles = require("../../utils/permission.js");
+const { checkRoles } = require('../../utils/permission.js');
 
 // Load upload image
-const uploadImage = require("../../utils/uploadImage");
+const uploadImage = require('../../utils/uploadImage');
 
 // Load Validation Create Post
-const validateCreatePost = require("../../validation/createPost");
-const isEmpty = require("../../validation/isEmpty");
+const validateCreatePost = require('../../validation/createPost');
+const isEmpty = require('../../validation/isEmpty');
 
 // Load Validation Edit Post
-const validateEditPost = require("../../validation/editPost");
+const validateEditPost = require('../../validation/editPost');
 
 // @route   GET api/admin/contents/all
 // @desc    GET All Post
 // @acess   Public
-router.get("/all", (req, res) => {
+router.get('/all', (req, res) => {
   Content.find()
-    .populate("author")
+    .populate('author')
     .exec((err, contents) => {
       if (err) return res.send(err);
 
@@ -43,11 +43,11 @@ router.get("/all", (req, res) => {
 // @desc    Create new post
 // @acess   Private
 router.post(
-  "/create",
+  '/create',
   userAuth,
-  uploadImage.single("imageContent"),
+  uploadImage.single('imageContent'),
   authAdmin,
-  checkRoles(["operator", "modGame", "modTech"]),
+  checkRoles(['operator', 'modGame', 'modTech']),
   (req, res) => {
     const { errors, isValid } = validateCreatePost(req.body, req.file);
     // CHECK VALIDATION
@@ -57,23 +57,23 @@ router.post(
     Content.findOne({ title: req.body.title }).then((content) => {
       if (content)
         return res.status(400).json({
-          content: "Title already exist",
+          content: 'Title already exist',
           success: false,
         });
 
       Account.findById(req.user._id)
-        .populate("roleId")
+        .populate('roleId')
         .then((account) => {
           let typeAccess;
           switch (account.roleId.role) {
-            case "operator":
+            case 'operator':
               typeAccess = req.body.typeContent;
               break;
-            case "modGame":
-              typeAccess = "game";
+            case 'modGame':
+              typeAccess = 'game';
               break;
-            case "modTech":
-              typeAccess = "technology";
+            case 'modTech':
+              typeAccess = 'technology';
               break;
           }
 
@@ -84,7 +84,7 @@ router.post(
           } else if (typeAccess === undefined) {
             return res.status(400).json({
               success: false,
-              content: "Something went wrong",
+              content: 'Something went wrong',
             });
           }
 
@@ -95,7 +95,7 @@ router.post(
             fieldContent: req.body.fieldContent,
             typeContent: req.body.typeContent,
             genreContent: req.body.genreContent,
-            tagContent: req.body.tagContent.split(" "),
+            tagContent: req.body.tagContent.split(' '),
             slug: slugify(req.body.title, { lower: true }),
           });
 
@@ -104,13 +104,13 @@ router.post(
             .then((content) =>
               res.status(200).json({
                 success: true,
-                content: "Your content has been delivered to operator",
+                content: 'Your content has been delivered to operator',
               })
             )
             .catch((err) =>
               res.status(400).json({
                 success: false,
-                content: "Something went wrong",
+                content: 'Something went wrong',
               })
             );
         })
@@ -124,10 +124,10 @@ router.post(
 // @acess   Private
 
 router.put(
-  "/edit/:slug",
+  '/edit/:slug',
   userAuth,
   authAdmin,
-  uploadImage.single("imageContent"),
+  uploadImage.single('imageContent'),
   (req, res) => {
     Content.findOne({ slug: req.params.slug })
       .then((content) => {
@@ -135,7 +135,7 @@ router.put(
         if (JSON.stringify(content.author) !== JSON.stringify(req.user._id)) {
           return res
             .status(403)
-            .json({ msg: "only the writter who can edit this files" });
+            .json({ msg: 'only the writter who can edit this files' });
         }
 
         if (content) {
@@ -154,7 +154,7 @@ router.put(
 
                 if (isTitle) {
                   res.status(400).json({
-                    content: "Title already exist",
+                    content: 'Title already exist',
                     success: false,
                   });
                 } else {
@@ -174,7 +174,7 @@ router.put(
                       fs.removeSync(content.imageContent.path);
                     } catch (e) {
                       res.status(400).send({
-                        message: "Error deleting image!",
+                        message: 'Error deleting image!',
                         error: e.toString(),
                         req: req.body,
                       });
@@ -192,7 +192,7 @@ router.put(
               .catch((err) => res.json(err));
             const contentUpdate = {};
           } else {
-            res.status(502).json({ msg: "There is no change on your post" });
+            res.status(502).json({ msg: 'There is no change on your post' });
           }
         }
       })
@@ -203,36 +203,36 @@ router.put(
 // @route   POST api/admin/contents/delete/:slug
 // @desc    Delete a post
 // @acess   Private
-router.delete("/delete/:slug", userAuth, authAdmin, (req, res) => {
+router.delete('/delete/:slug', userAuth, authAdmin, (req, res) => {
   Content.findOne({ slug: req.params.slug })
     .populate({
-      path: "author",
-      populate: { path: "roleId" },
+      path: 'author',
+      populate: { path: 'roleId' },
     })
 
     .then((content) => {
-      if (!content) return res.status(404).json({ msg: "Post not found" });
+      if (!content) return res.status(404).json({ msg: 'Post not found' });
 
       if (
         content.author._id !== req.user._id &&
-        content.author.roleId.role !== "operator"
+        content.author.roleId.role !== 'operator'
       ) {
         return res.status(403).json({
           msg:
-            "only the Operator or the Admin who wrote this are able to delete the post",
+            'only the Operator or the Admin who wrote this are able to delete the post',
         });
       }
       try {
         fs.removeSync(content.imageContent.path);
       } catch (e) {
         res.status(400).send({
-          message: "Error deleting image!",
+          message: 'Error deleting image!',
           error: e.toString(),
           req: req.body,
         });
       }
       content.remove({ slug: req.params.slug }).then(() => {
-        return res.status(200).json({ msg: "Post succesfully deleted" });
+        return res.status(200).json({ msg: 'Post succesfully deleted' });
       });
     })
     .catch((err) => res.send(err));
@@ -241,7 +241,7 @@ router.delete("/delete/:slug", userAuth, authAdmin, (req, res) => {
 // @route   POST api/contents/like/:slug
 // @desc    Likes a post
 // @acess   Private
-router.post("/like/:slug", userAuth, (req, res) => {
+router.post('/like/:slug', userAuth, (req, res) => {
   Content.findOne({ slug: req.params.slug })
 
     .then((content) => {
@@ -250,7 +250,7 @@ router.post("/like/:slug", userAuth, (req, res) => {
           (like) => like._id.toString() === req.user._id.toString()
         )
       )
-        return res.status(400).json({ msg: "You already liked this post" });
+        return res.status(400).json({ msg: 'You already liked this post' });
 
       console.log(Date.now());
       content.like.unshift(req.user._id);
@@ -266,7 +266,7 @@ router.post("/like/:slug", userAuth, (req, res) => {
 // @desc    Unlikes a post
 // @acess   Private
 
-router.post("/unlike/:slug", userAuth, (req, res) => {
+router.post('/unlike/:slug', userAuth, (req, res) => {
   Content.findOne({ slug: req.params.slug })
     .then((content) => {
       if (
@@ -294,7 +294,7 @@ router.post("/unlike/:slug", userAuth, (req, res) => {
 // @desc    Comment a Post
 // @acess   Private
 
-router.post("/comment/:slug", userAuth, (req, res) => {
+router.post('/comment/:slug', userAuth, (req, res) => {
   Content.findOne({ slug: req.params.slug })
     .then((content) => {
       const newComment = {
@@ -309,7 +309,7 @@ router.post("/comment/:slug", userAuth, (req, res) => {
         .then((content) => res.json(content));
     })
     .catch((err) =>
-      res.status(400).json({ Contentpost: "Content Post not found" })
+      res.status(400).json({ Contentpost: 'Content Post not found' })
     );
 });
 
@@ -317,7 +317,7 @@ router.post("/comment/:slug", userAuth, (req, res) => {
 // @desc    Comment a Post
 // @acess   Private
 
-router.delete("/comment/:slug/:comment_id", userAuth, (req, res) => {
+router.delete('/comment/:slug/:comment_id', userAuth, (req, res) => {
   Content.findOne({ slug: req.params.slug })
     .then((content) => {
       if (
