@@ -8,7 +8,7 @@ const checkRoles = (roles) => (req, res, next) => {
   next();
 };
 
-const updateAccount = (req, res, next) => {
+const actionAccount = (req, res, next) => {
   if (
     req.user.nickname !== req.params.nickname ||
     req.user.roleId.role !== 'operator'
@@ -23,5 +23,5 @@ const updateAccount = (req, res, next) => {
 
 module.exports = {
   checkRoles,
-  updateAccount,
+  actionAccount,
 };
