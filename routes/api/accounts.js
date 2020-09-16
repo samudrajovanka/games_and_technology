@@ -69,64 +69,62 @@ router.post('/register', (req, res) => {
 
   Account.find()
     .then((accounts) => {
-      if (accounts) {
-        const alreadyAccount = accounts.filter((account) => {
-          return (
-            account.nickname === req.body.nickname.toLowerCase() ||
-            account.email === req.body.email.toLowerCase()
-          );
+      const alreadyAccount = accounts.filter((account) => {
+        return (
+          account.nickname === req.body.nickname.toLowerCase() ||
+          account.email === req.body.email.toLowerCase()
+        );
+      });
+
+      // if nickname and email is already
+      if (alreadyAccount.length !== 0) {
+        errors.success = false;
+        alreadyAccount.map((account) => {
+          if (account.nickname === req.body.nickname.toLowerCase())
+            errors.nickname = 'Nickname already exists';
+          else if (account.email === req.body.email.toLowerCase())
+            errors.email = 'Email already exists';
         });
 
-        // if nickname and email is already
-        if (alreadyAccount.length !== 0) {
-          errors.success = false;
-          alreadyAccount.map((account) => {
-            if (account.nickname === req.body.nickname.toLowerCase())
-              errors.nickname = 'Nickname already exists';
-            else if (account.email === req.body.email.toLowerCase())
-              errors.email = 'Email already exists';
-          });
+        return res.status(400).json(errors);
+      }
 
-          return res.status(400).json(errors);
+      Role.findOne({ role: 'member' }).then((role) => {
+        if (!role) {
+          return res.status(400).send({
+            success: false,
+            role: 'Role not exist',
+          });
         }
 
-        Role.findOne({ role: 'member' }).then((role) => {
-          if (!role) {
-            return res.status(400).send({
-              success: false,
-              role: 'Role not exist',
-            });
-          }
+        const newAccount = new Account({
+          roleId: role._id,
+          nickname: req.body.nickname,
+          email: req.body.email,
+          password: req.body.password,
+          accountImage: {
+            filename: 'default_user.png',
+            path: 'static/image/default_user.png',
+          },
+          socialMedia: {
+            instagram: req.body.instagram,
+            twitter: req.body.twitter,
+            steam: req.body.steam,
+          },
+        });
 
-          const newAccount = new Account({
-            roleId: role._id,
-            nickname: req.body.nickname,
-            email: req.body.email,
-            password: req.body.password,
-            accountImage: {
-              filename: 'default_user.png',
-              path: 'static/image/default_user.png',
-            },
-            socialMedia: {
-              instagram: req.body.instagram,
-              twitter: req.body.twitter,
-              steam: req.body.steam,
-            },
-          });
-
-          SALT_WORK_FACTOR = parseInt(process.env.SALT_WORK_FACTOR);
-          bcrypt.genSalt(SALT_WORK_FACTOR, (err, salt) => {
-            bcrypt.hash(newAccount.password, salt, (err, hash) => {
-              if (err) throw err;
-              newAccount.password = hash;
-              newAccount
-                .save()
-                .then((account) => res.json(serializeUser(account)))
-                .catch((err) => console.log(err));
-            });
+        SALT_WORK_FACTOR = parseInt(process.env.SALT_WORK_FACTOR);
+        bcrypt.genSalt(SALT_WORK_FACTOR, (err, salt) => {
+          bcrypt.hash(newAccount.password, salt, (err, hash) => {
+            if (err) throw err;
+            newAccount.password = hash;
+            newAccount
+              .save()
+              .then((account) => res.json(serializeUser(account)))
+              .catch((err) => console.log(err));
           });
         });
-      }
+      });
     })
     .catch((err) =>
       res.status(500).json({
@@ -250,53 +248,73 @@ router.put(
 
     accountUpdate.updateAt = Date.now();
 
-    Account.findOne({ nickname: req.params.nickname.toLowerCase() })
-      .then((account) => {
-        if (account) {
-          if (req.body.newPassword) {
-            SALT_WORK_FACTOR = parseInt(process.env.SALT_WORK_FACTOR);
-            bcrypt.genSalt(SALT_WORK_FACTOR, (err, salt) => {
-              bcrypt.hash(accountUpdate.password, salt, (err, hash) => {
-                if (err) throw err;
+    Account.find().then((accounts) => {
+      const alreadyAccount = accounts.filter((account) => {
+        return (
+          account.nickname === accountUpdate.nickname ||
+          account.email === accountUpdate.email
+        );
+      });
 
-                accountUpdate.password = hash;
-                Account.findOneAndUpdate(
-                  { nickname: req.params.nickname.toLowerCase() },
-                  { $set: accountUpdate },
-                  { new: true }
-                ).then((account) => {
-                  return res.status(200).json(serializeUser(account));
+      if (alreadyAccount.length !== 0) {
+        errors.success = false;
+        alreadyAccount.map((account) => {
+          if (account.nickname === accountUpdate.nickname)
+            errors.nickname = 'Nickname already exists';
+          else if (account.email === accountUpdate.email)
+            errors.email = 'Email already exists';
+        });
+        return res.status(400).json(errors);
+      }
+
+      Account.findOne({ nickname: req.params.nickname.toLowerCase() })
+        .then((account) => {
+          if (account) {
+            if (req.body.newPassword) {
+              SALT_WORK_FACTOR = parseInt(process.env.SALT_WORK_FACTOR);
+              bcrypt.genSalt(SALT_WORK_FACTOR, (err, salt) => {
+                bcrypt.hash(accountUpdate.password, salt, (err, hash) => {
+                  if (err) throw err;
+
+                  accountUpdate.password = hash;
+                  Account.findOneAndUpdate(
+                    { nickname: req.params.nickname.toLowerCase() },
+                    { $set: accountUpdate },
+                    { new: true }
+                  ).then((account) => {
+                    return res.status(200).json(serializeUser(account));
+                  });
                 });
               });
-            });
-          } else if (!isEmpty(req.body) || !isEmpty(req.file)) {
-            Account.findOneAndUpdate(
-              { nickname: req.params.nickname.toLowerCase() },
-              { $set: accountUpdate },
-              { new: true }
-            ).then((account) => {
-              return res.status(200).json(serializeUser(account));
-            });
-          } else {
-            return res.status(200).json({
-              success: true,
-              message: 'There is no update in your profile',
-            });
+            } else if (!isEmpty(req.body) || !isEmpty(req.file)) {
+              Account.findOneAndUpdate(
+                { nickname: req.params.nickname.toLowerCase() },
+                { $set: accountUpdate },
+                { new: true }
+              ).then((account) => {
+                return res.status(200).json(serializeUser(account));
+              });
+            } else {
+              return res.status(200).json({
+                success: true,
+                message: 'There is no update in your profile',
+              });
+            }
           }
-        }
 
-        if (!account)
-          return res.status(404).json({
-            status: 'error',
-            message: 'Page not found',
-          });
-      })
-      .catch((err) =>
-        res.status(500).json({
-          status: 'error',
-          error: err,
+          if (!account)
+            return res.status(404).json({
+              status: 'error',
+              message: 'Page not found',
+            });
         })
-      );
+        .catch((err) =>
+          res.status(500).json({
+            status: 'error',
+            error: err,
+          })
+        );
+    });
   }
 );
 
