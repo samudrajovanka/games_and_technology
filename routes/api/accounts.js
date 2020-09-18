@@ -145,7 +145,7 @@ router.post('/login', (req, res) => {
 
   const { email, password } = req.body;
 
-  Account.findOne({ email: email.toLowerCase() }).then((user) => {
+  Account.findOne({ email: email.trim().toLowerCase() }).then((user) => {
     // check for user
     if (!user) {
       errors.success = false;
@@ -188,7 +188,7 @@ router.post('/login', (req, res) => {
 // @desc     Get Account Member
 // @access   Public
 router.get('/profile/:nickname', (req, res) => {
-  Account.findOne({ nickname: req.params.nickname.toLowerCase() })
+  Account.findOne({ nickname: req.params.nickname.trim().toLowerCase() })
     .populate('roleId')
     .exec((err, account) => {
       if (err)
@@ -221,8 +221,9 @@ router.put(
     const accountUpdate = {};
 
     if (req.body.nickname)
-      accountUpdate.nickname = req.body.nickname.toLowerCase();
-    if (req.body.email) accountUpdate.email = req.body.email.toLowerCase();
+      accountUpdate.nickname = req.body.nickname.trim().toLowerCase();
+    if (req.body.email)
+      accountUpdate.email = req.body.email.trim().toLowerCase();
     if (req.body.newPassword) accountUpdate.password = req.body.newPassword;
 
     if (req.file) {
@@ -230,7 +231,7 @@ router.put(
         try {
           fs.removeSync(req.user.accountImage.path);
         } catch (err) {
-          return res.status(500).send({
+          return res.status(502).send({
             status: 'error',
             message: 'Error deleting image!',
             error: err,
@@ -267,7 +268,7 @@ router.put(
         return res.status(400).json(errors);
       }
 
-      Account.findOne({ nickname: req.params.nickname.toLowerCase() })
+      Account.findOne({ nickname: req.params.nickname.trim().toLowerCase() })
         .then((account) => {
           if (account) {
             if (req.body.newPassword) {
@@ -288,7 +289,7 @@ router.put(
               });
             } else if (!isEmpty(req.body) || !isEmpty(req.file)) {
               Account.findOneAndUpdate(
-                { nickname: req.params.nickname.toLowerCase() },
+                { nickname: req.params.nickname.trim().toLowerCase() },
                 { $set: accountUpdate },
                 { new: true }
               ).then((account) => {
@@ -326,7 +327,7 @@ router.delete(
   userAuth,
   actionAccount,
   (req, res) => {
-    Account.findOne(req.params.nickname)
+    Account.findOne(req.params.nickname.trim().toLowerCase())
       .then((account) => {
         if (!account)
           return res.status(404).json({
@@ -355,7 +356,7 @@ router.delete(
             })
           )
           .catch((err) => {
-            return res.status(500).json({
+            return res.status(502).json({
               success: false,
               message: 'Delete unsuccessful',
             });

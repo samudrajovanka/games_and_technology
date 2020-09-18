@@ -41,7 +41,7 @@ router.post('/login', loginAdmin, (req, res) => {
 
   const { email, password } = req.body;
 
-  Account.findOne({ email: email.toLowerCase() }).then((account) => {
+  Account.findOne({ email: email.trim().toLowerCase() }).then((account) => {
     // check for account
     if (!account) {
       errors.success = false;
@@ -100,8 +100,8 @@ router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
     .then((accounts) => {
       const alreadyAccount = accounts.filter((account) => {
         return (
-          account.nickname === req.body.nickname.toLowerCase() ||
-          account.email === req.body.email.toLowerCase()
+          account.nickname === req.body.nickname.trim().toLowerCase() ||
+          account.email === req.body.email.trim().toLowerCase()
         );
       });
 
@@ -109,9 +109,9 @@ router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
       if (alreadyAccount.length !== 0) {
         errors.success = false;
         alreadyAccount.map((account) => {
-          if (account.nickname === req.body.nickname.toLowerCase())
+          if (account.nickname === req.body.nickname.trim().toLowerCase())
             errors.nickname = 'Nickname already exists';
-          else if (account.email === req.body.email.toLowerCase())
+          else if (account.email === req.body.email.trim().toLowerCase())
             errors.email = 'Email already exists';
         });
 
@@ -188,11 +188,13 @@ router.get('/profile/all', userAuth, authAdmin, (req, res) => {
           return res.status(200).json(accountAdminSerialize);
         } else {
           return res.status(200).json({
+            success: true,
             message: 'No admin',
           });
         }
       } else {
         return res.stauts(200).json({
+          success: true,
           message: 'No admin',
         });
       }
@@ -203,7 +205,7 @@ router.get('/profile/all', userAuth, authAdmin, (req, res) => {
 // @desc     Get Account Admin
 // @access   Public
 router.get('/profile/:nickname', (req, res) => {
-  Account.findOne({ nickname: req.params.nickname.toLowerCase() })
+  Account.findOne({ nickname: req.params.nickname.trim().toLowerCase() })
     .populate('roleId')
     .exec((err, account) => {
       if (err)
@@ -252,7 +254,7 @@ router.put(
         try {
           fs.removeSync(req.user.accountImage.path);
         } catch (err) {
-          return res.status(500).send({
+          return res.status(502).send({
             status: 'error',
             message: 'Error deleting image!',
             error: err,
@@ -349,7 +351,7 @@ router.delete(
   authAdmin,
   checkRoles(['operator']),
   (req, res) => {
-    Account.findOne({ nickname: req.params.nickname.toLowerCase() })
+    Account.findOne({ nickname: req.params.nickname.trim().toLowerCase() })
       .then((account) => {
         if (!account)
           return res.status(404).json({
@@ -385,7 +387,7 @@ router.delete(
           });
       })
       .catch((err) =>
-        res.status(500).json({
+        res.status(502).json({
           status: 'error',
           error: err,
         })

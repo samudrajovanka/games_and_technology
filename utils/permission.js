@@ -10,7 +10,7 @@ const checkRoles = (roles) => (req, res, next) => {
 
 const actionAccount = (req, res, next) => {
   if (
-    req.user.nickname !== req.params.nickname.toLowerCase() &&
+    req.user.nickname !== req.params.nickname.trim().toLowerCase() &&
     req.user.roleId.role !== 'operator'
   )
     return res.status(403).send({

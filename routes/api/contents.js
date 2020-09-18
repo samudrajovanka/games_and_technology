@@ -5,7 +5,7 @@ const slugify = require('slugify');
 
 // Load Models
 const { Content } = require('../../models/Content');
-const { Account, Role } = require('../../models/Account');
+const { Account } = require('../../models/Account');
 
 // Load Authentication
 const { userAuth, authAdmin, serializeUser } = require('../../utils/auth.js');
@@ -16,11 +16,9 @@ const { checkRoles } = require('../../utils/permission.js');
 // Load upload image
 const uploadImage = require('../../utils/uploadImage');
 
-// Load Validation Create Post
+// Load Validation
 const validateCreatePost = require('../../validation/createPost');
 const isEmpty = require('../../validation/isEmpty');
-
-// Load Validation Edit Post
 const validateEditPost = require('../../validation/editPost');
 
 // @route   GET api/admin/contents/all
@@ -30,12 +28,22 @@ router.get('/all', (req, res) => {
   Content.find()
     .populate('author')
     .exec((err, contents) => {
-      if (err) return res.send(err);
+      if (err)
+        return res.status(500).json({
+          status: 'error',
+          error: err,
+        });
+
+      if (contents.length === 0)
+        return res.status(200).json({
+          success: true,
+          message: 'No contents',
+        });
 
       contents.map((content) => {
         content.author = serializeUser(content.author);
       });
-      res.json(contents);
+      return res.status(200).json(contents);
     });
 });
 
@@ -50,15 +58,14 @@ router.post(
   checkRoles(['operator', 'modGame', 'modTech']),
   (req, res) => {
     const { errors, isValid } = validateCreatePost(req.body, req.file);
-    // CHECK VALIDATION
-    if (!isValid) {
-      return res.status(400).json(errors);
-    }
+    // Check validation
+    if (!isValid) return res.status(400).json(errors);
+
     Content.findOne({ title: req.body.title }).then((content) => {
       if (content)
         return res.status(400).json({
-          content: 'Title already exist',
           success: false,
+          content: 'Title already exist',
         });
 
       Account.findById(req.user._id)
@@ -77,26 +84,22 @@ router.post(
               break;
           }
 
-          if (typeAccess !== req.body.typeContent) {
+          if (typeAccess !== req.body.typeContent || typeAccess === undefined) {
             return res.status(403).json({
-              typeContent: "You're role is forbidden to post in this section",
-            });
-          } else if (typeAccess === undefined) {
-            return res.status(400).json({
               success: false,
-              content: 'Something went wrong',
+              typeContent: "You're role is forbidden to post in this section",
             });
           }
 
           const newContent = new Content({
             author: req.user._id,
-            title: req.body.title,
+            title: req.body.title.trim(),
             imageContent: req.file,
-            fieldContent: req.body.fieldContent,
-            typeContent: req.body.typeContent,
-            genreContent: req.body.genreContent,
+            fieldContent: req.body.fieldContent.trim(),
+            typeContent: req.body.typeContent.toLowerCase(),
+            genreContent: req.body.genreContent.toLowerCase(),
             tagContent: req.body.tagContent.split(' '),
-            slug: slugify(req.body.title, { lower: true }),
+            slug: slugify(req.body.title.trim(), { lower: true }),
           });
 
           newContent
@@ -108,13 +111,18 @@ router.post(
               })
             )
             .catch((err) =>
-              res.status(400).json({
+              res.status(500).json({
                 success: false,
                 content: 'Something went wrong',
               })
             );
         })
-        .catch((err) => res.json(err));
+        .catch((err) =>
+          res.status(500).json({
+            status: 'error',
+            error: err,
+          })
+        );
     });
   }
 );
@@ -122,81 +130,98 @@ router.post(
 // @route   POST api/admin/contents/edit/:slug
 // @desc    Edit a post
 // @acess   Private
-
 router.put(
   '/edit/:slug',
   userAuth,
   authAdmin,
   uploadImage.single('imageContent'),
   (req, res) => {
-    Content.findOne({ slug: req.params.slug })
+    Content.findOne({ slug: req.params.slug.trim().toLowerCase() })
       .then((content) => {
-        8;
         if (JSON.stringify(content.author) !== JSON.stringify(req.user._id)) {
-          return res
-            .status(403)
-            .json({ msg: 'only the writter who can edit this files' });
+          return res.status(403).json({
+            status: 'error',
+            message: 'only the writter who can edit this files',
+          });
         }
 
-        if (content) {
-          if (!isEmpty(req.body) || !isEmpty(req.file)) {
-            const { errors, isValid } = validateEditPost(req.body, req.file);
-            if (!isValid) return res.status(400).json(errors);
+        if (!content)
+          return res.status(404).json({
+            success: false,
+            message: 'Page not found',
+          });
 
-            Content.find()
-              .then((contents) => {
-                const isTitle = contents.some((oldContent) => {
-                  return (
-                    oldContent.title.toLowerCase() ===
-                    req.body.title.toLowerCase()
-                  );
+        if (!isEmpty(req.body) || !isEmpty(req.file)) {
+          const { errors, isValid } = validateEditPost(req.body, req.file);
+          if (!isValid) return res.status(400).json(errors);
+
+          Content.find()
+            .then((contents) => {
+              const isTitle = contents.some((oldContent) => {
+                return (
+                  oldContent.title.toLowerCase() ===
+                  req.body.title.toLowerCase()
+                );
+              });
+
+              if (isTitle) {
+                return res.status(400).json({
+                  success: false,
+                  content: 'Title already exist',
                 });
+              }
 
-                if (isTitle) {
-                  res.status(400).json({
-                    content: 'Title already exist',
-                    success: false,
+              const contentUpdate = {};
+              if (req.body.title) {
+                contentUpdate.title = req.body.title.trim();
+                contentUpdate.slug = slugify(req.body.title.trim(), {
+                  lower: true,
+                });
+              }
+              if (req.body.fieldContent)
+                contentUpdate.fieldContent = req.body.fieldContent.trim();
+              if (req.body.genreContent)
+                contentUpdate.genreContent = req.body.genreContent.toLowerCase();
+              if (req.file) {
+                try {
+                  fs.removeSync(content.imageContent.path);
+                } catch (err) {
+                  return res.status(500).send({
+                    status: 'error',
+                    message: 'Error deleting image!',
+                    error: err,
                   });
-                } else {
-                  if (req.body.title) {
-                    contentUpdate.title = req.body.title;
-                    contentUpdate.slug = slugify(req.body.title, {
-                      lower: true,
-                    });
-                  }
-                  if (req.body.fieldContent)
-                    contentUpdate.fieldContent = req.body.fieldContent;
-                  if (req.body.genreContent)
-                    contentUpdate.genreContent = req.body.genreContent;
-                  if (req.file) contentUpdate.imageContent = req.file;
-                  if (req.contentImage) {
-                    try {
-                      fs.removeSync(content.imageContent.path);
-                    } catch (e) {
-                      res.status(400).send({
-                        message: 'Error deleting image!',
-                        error: e.toString(),
-                        req: req.body,
-                      });
-                    }
-                  }
-                  contentUpdate.updatedAt = Date.now();
-
-                  Content.findOneAndUpdate(
-                    { slug: req.params.slug },
-                    { $set: contentUpdate },
-                    { new: true }
-                  ).then((content) => res.json(content));
                 }
+                contentUpdate.imageContent = req.file;
+              }
+
+              contentUpdate.updatedAt = Date.now();
+
+              Content.findOneAndUpdate(
+                { slug: req.params.slug.trim().toLowerCase() },
+                { $set: contentUpdate },
+                { new: true }
+              ).then((content) => res.status(200).json(content));
+            })
+            .catch((err) =>
+              res.status(500).json({
+                status: 'error',
+                error: err,
               })
-              .catch((err) => res.json(err));
-            const contentUpdate = {};
-          } else {
-            res.status(502).json({ msg: 'There is no change on your post' });
-          }
+            );
+        } else {
+          res.status(200).json({
+            success: true,
+            message: 'There is no change on your post',
+          });
         }
       })
-      .catch((err) => res.send(err));
+      .catch((err) =>
+        res.status(500).json({
+          status: 'error',
+          error: err,
+        })
+      );
   }
 );
 
@@ -209,134 +234,212 @@ router.delete('/delete/:slug', userAuth, authAdmin, (req, res) => {
       path: 'author',
       populate: { path: 'roleId' },
     })
-
     .then((content) => {
-      if (!content) return res.status(404).json({ msg: 'Post not found' });
+      if (!content)
+        return res.status(404).json({
+          success: false,
+          message: 'Page not found',
+        });
 
       if (
         content.author._id !== req.user._id &&
         content.author.roleId.role !== 'operator'
       ) {
         return res.status(403).json({
-          msg:
+          success: false,
+          message:
             'only the Operator or the Admin who wrote this are able to delete the post',
         });
       }
+
       try {
         fs.removeSync(content.imageContent.path);
-      } catch (e) {
-        res.status(400).send({
+      } catch (err) {
+        res.status(502).send({
+          status: 'error',
           message: 'Error deleting image!',
-          error: e.toString(),
-          req: req.body,
+          error: err,
         });
       }
-      content.remove({ slug: req.params.slug }).then(() => {
-        return res.status(200).json({ msg: 'Post succesfully deleted' });
-      });
+      content
+        .remove({ slug: req.params.slug.trim().toLowerCase() })
+        .then(() => {
+          return res.status(200).json({
+            success: true,
+            message: 'Post succesfully deleted',
+          });
+        });
     })
-    .catch((err) => res.send(err));
+    .catch((err) =>
+      res.status(500).json({
+        status: 'error',
+        eropr: err,
+      })
+    );
 });
 
 // @route   POST api/contents/like/:slug
 // @desc    Likes a post
 // @acess   Private
 router.post('/like/:slug', userAuth, (req, res) => {
-  Content.findOne({ slug: req.params.slug })
-
+  Content.findOne({ slug: req.params.slug.trim().toLowerCase() })
     .then((content) => {
+      if (!content)
+        return res.status(404).json({
+          status: 'error',
+          message: 'Page not found',
+        });
+
       if (
-        content.like.some(
-          (like) => like._id.toString() === req.user._id.toString()
+        content.likes.some(
+          (like) =>
+            JSON.stringify(like.account) === JSON.stringify(req.user._id)
         )
       )
-        return res.status(400).json({ msg: 'You already liked this post' });
+        return res.status(400).json({
+          success: false,
+          message: 'You already liked this post',
+        });
 
-      console.log(Date.now());
-      content.like.unshift(req.user._id);
+      content.likes.unshift({ account: req.user._id });
 
-      content
-        .save({ slug: req.params.slug })
-        .then((content) => res.json(content));
+      content.save({ slug: req.params.slug }).then((content) =>
+        res.status(200).json({
+          success: true,
+          message: 'You like this post',
+        })
+      );
     })
-    .catch((err) => res.send(err));
+    .catch((err) =>
+      res.status(500).json({
+        status: 'error',
+        error: err,
+      })
+    );
 });
 
 // @route   POST api/contents/unlike/:slug
 // @desc    Unlikes a post
 // @acess   Private
-
 router.post('/unlike/:slug', userAuth, (req, res) => {
-  Content.findOne({ slug: req.params.slug })
+  Content.findOne({ slug: req.params.slug.trim().toLowerCase() })
     .then((content) => {
+      if (!content)
+        return res.status(404).json({
+          status: 'error',
+          message: 'Page not found',
+        });
       if (
-        content.like.some(
-          (like) => like._id.toString() === req.user._id.toString()
+        content.likes.some(
+          (like) =>
+            JSON.stringify(like.account) === JSON.stringify(req.user._id)
         )
       ) {
-        const removeLike = content.like.findIndex(
-          (account) => account._id === req.user._id
+        const removeLike = content.likes.findIndex(
+          (like) =>
+            JSON.stringify(like.account) === JSON.stringify(req.user._id)
         );
 
-        content.like.splice(removeLike, 1);
+        content.likes.splice(removeLike, 1);
 
-        content
-          .save({ slug: req.params.slug })
-          .then((content) => res.json(content));
+        content.save({ slug: req.params.slug.trim().toLowerCase() }).then(() =>
+          res.status(200).json({
+            success: true,
+            message: 'You unlike this post',
+          })
+        );
       } else {
-        return res.status(400).json({ msg: "you haven't like the post" });
+        return res.status(400).json({
+          success: false,
+          message: "you haven't like the post",
+        });
       }
     })
-    .catch((err) => res.send(err));
-});
-
-// @route   POST api/admin/contents/comment/:slug
-// @desc    Comment a Post
-// @acess   Private
-
-router.post('/comment/:slug', userAuth, (req, res) => {
-  Content.findOne({ slug: req.params.slug })
-    .then((content) => {
-      const newComment = {
-        account: req.user._id,
-        fieldComment: req.body.fieldComment,
-      };
-
-      content.comment.unshift(newComment);
-
-      content
-        .save({ slug: req.params.slug })
-        .then((content) => res.json(content));
-    })
     .catch((err) =>
-      res.status(400).json({ Contentpost: 'Content Post not found' })
+      res.status(500).json({
+        status: 'error',
+        error: err,
+      })
     );
 });
 
 // @route   POST api/admin/contents/comment/:slug
 // @desc    Comment a Post
 // @acess   Private
-
-router.delete('/comment/:slug/:comment_id', userAuth, (req, res) => {
-  Content.findOne({ slug: req.params.slug })
+router.post('/comment/:slug', userAuth, (req, res) => {
+  Content.findOne({ slug: req.params.slug.trim().toString() })
     .then((content) => {
+      if (!content)
+        return res.status(404).json({
+          status: 'error',
+          message: 'Page not found',
+        });
+
+      const newComment = {
+        account: req.user._id,
+        fieldComment: req.body.fieldComment,
+      };
+
+      content.comments.unshift(newComment);
+
+      content.save({ slug: req.params.slug.trim().toLowerCase() }).then(() =>
+        res.status(200).json({
+          success: true,
+          message: 'You comment this post',
+        })
+      );
+    })
+    .catch((err) =>
+      res.status(500).json({
+        status: 'error',
+        error: err,
+      })
+    );
+});
+
+// @route   POST api/admin/contents/comment/:slug
+// @desc    delete comment post
+// @acess   Private
+router.delete('/comment/:slug/delete/:comment_id', userAuth, (req, res) => {
+  Content.findOne({ slug: req.params.slug.trim().toLowerCase() })
+    .then((content) => {
+      if (!content)
+        return res.status(404).json({
+          status: 'error',
+          message: 'Page not found',
+        });
+
       if (
-        content.comment.some(
+        content.comments.some(
           (comment) =>
-            comment._id.toString() === req.params.comment_id.toString()
+            JSON.stringify(comment._id) ===
+            JSON.stringify(req.params.comment_id)
         )
       ) {
-        const removeComment = content.comment.findIndex(
+        const removeComment = content.comments.findIndex(
           (comment) => comment._id === req.params._id
         );
 
-        content.comment.splice(removeComment, 1);
+        content.comments.splice(removeComment, 1);
 
-        content
-          .save({ slug: req.params.slug })
-          .then((content) => res.json(content));
+        content.save({ slug: req.params.slug }).then(() =>
+          res.status(200).json({
+            success: true,
+            message: 'You deleted comment',
+          })
+        );
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "you haven't comment the post",
+        });
       }
     })
-    .catch((err) => res.send(err));
+    .catch((err) =>
+      res.status(500).json({
+        status: 'error',
+        error: err,
+      })
+    );
 });
 module.exports = router;
