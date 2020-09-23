@@ -71,6 +71,9 @@ const ContentSchema = new Schema({
     required: true,
     unique: true,
   },
+  note: {
+    type: String
+  }
 });
 
 module.exports = {

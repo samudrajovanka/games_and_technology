@@ -62,7 +62,7 @@ router.post('/login', loginAdmin, (req, res) => {
           payload,
           keys.secretOrKey,
           {
-            expiresIn: 3600,
+            expiresIn: 7200,
             algorithm: 'HS256',
           },
           (err, token) => {
@@ -92,19 +92,20 @@ router.post('/login', loginAdmin, (req, res) => {
 // @acess   Private
 router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
   const { errors, isValid } = validateRegisterInput(req.body);
-
+ 
   // check validation
   if (!isValid) return res.status(400).json(errors);
-
+  
   Account.find()
     .then((accounts) => {
+      
       const alreadyAccount = accounts.filter((account) => {
         return (
           account.nickname === req.body.nickname.trim().toLowerCase() ||
           account.email === req.body.email.trim().toLowerCase()
         );
       });
-
+     
       // if nickname and email is already
       if (alreadyAccount.length !== 0) {
         errors.success = false;
@@ -117,7 +118,7 @@ router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
 
         return res.status(400).json(errors);
       }
-
+      
       Role.findOne({ role: req.body.role }).then((role) => {
         if (!role) {
           return res.status(400).send({

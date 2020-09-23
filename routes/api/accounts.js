@@ -166,7 +166,7 @@ router.post('/login', (req, res) => {
           payload,
           keys.secretOrKey,
           {
-            expiresIn: 3601,
+            expiresIn: 7200,
             algorithm: 'HS256',
           },
           (err, token) => {
