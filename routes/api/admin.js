@@ -92,20 +92,19 @@ router.post('/login', loginAdmin, (req, res) => {
 // @acess   Private
 router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
   const { errors, isValid } = validateRegisterInput(req.body);
- 
+
   // check validation
   if (!isValid) return res.status(400).json(errors);
-  
+
   Account.find()
     .then((accounts) => {
-      
       const alreadyAccount = accounts.filter((account) => {
         return (
           account.nickname === req.body.nickname.trim().toLowerCase() ||
           account.email === req.body.email.trim().toLowerCase()
         );
       });
-     
+
       // if nickname and email is already
       if (alreadyAccount.length !== 0) {
         errors.success = false;
@@ -118,7 +117,7 @@ router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
 
         return res.status(400).json(errors);
       }
-      
+
       Role.findOne({ role: req.body.role }).then((role) => {
         if (!role) {
           return res.status(400).send({
@@ -360,9 +359,9 @@ router.delete(
             message: 'Page not found',
           });
 
-        if (req.user.accountImage.filename !== 'default_user.png') {
+        if (account.accountImage.filename !== 'default_user.png') {
           try {
-            fs.removeSync(req.user.accountImage.path);
+            fs.removeSync(account.accountImage.path);
           } catch (err) {
             return res.status(500).send({
               status: 'error',

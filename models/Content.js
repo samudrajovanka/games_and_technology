@@ -72,7 +72,11 @@ const ContentSchema = new Schema({
     unique: true,
   },
   note: {
-    type: String
+    type: String,
+  },
+  isInAdmin: {
+    type: Boolean,
+    default: true
   }
 });
 
