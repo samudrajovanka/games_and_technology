@@ -163,6 +163,30 @@ router.post(
   }
 );
 
+// @route   GET api/admin/contents/:slug
+// @desc    Get content by slug
+// @acess   Public
+router.put('/:slug', (req, res) => {
+  Content.findOne({ slug: req.params.slug })
+    .populate('author')
+    .exec((err, content) => {
+      if (err)
+        return res.status(500).json({
+          status: 'error',
+          error: err,
+        });
+
+      if (!content)
+        return res.status(404).json({
+          success: false,
+          message: 'Page not found',
+        });
+
+      content.author = serializeUser(content.author);
+      return res.status(200).json(contents);
+    });
+});
+
 // @route   POST api/admin/contents/edit/:slug
 // @desc    Edit a post
 // @acess   Private
