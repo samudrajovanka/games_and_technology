@@ -77,6 +77,10 @@ const ContentSchema = new Schema({
   isInAdmin: {
     type: Boolean,
     default: true
+  },
+  isReject: {
+    type: Boolean,
+    default: false
   }
 });
 
