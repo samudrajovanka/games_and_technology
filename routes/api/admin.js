@@ -129,6 +129,7 @@ router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
         const newAccount = new Account({
           roleId: role._id,
           nickname: req.body.nickname,
+          name: req.body.name,
           email: req.body.email,
           password: req.body.password,
           accountImage: {
@@ -242,7 +243,16 @@ router.put(
       accountUpdate.nickname = req.body.nickname.toLowerCase();
     if (req.body.email) accountUpdate.email = req.body.email.toLowerCase();
     if (req.body.newPassword) accountUpdate.password = req.body.newPassword;
-
+    if (req.body.name) {
+      if (JSON.stringify(req.user.roleId.role) !== 'operator') 
+      {
+        return res.status(403).json({
+          success: false,
+          message: 'Only Operator who able to change the name'
+        })
+      }
+      accountUpdate.name = req.body.name;
+    }
     if (req.body.role) {
       Role.findOne({ role: req.body.role }).then((role) => {
         accountUpdate.roleId = role._id;

@@ -34,6 +34,9 @@ const AccountSchema = new Schema({
     unique: true,
     required: true,
   },
+  name: {
+    type: String,
+  },
   socialMedia: {
     instagram: {
       type: String,

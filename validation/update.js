@@ -17,6 +17,12 @@ module.exports = validateUpdateInput = (data, currentData) => {
     }
   }
 
+  if (data.name) {
+    if (Validator.isEmpty(data.name)) {
+      errors.name = 'Name is required!'
+    }
+  }
+
   if (data.oldPassword) {
     // check password
     bcrypt.compare(data.oldPassword, currentData.password).then((isMatch) => {
