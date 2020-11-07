@@ -166,8 +166,8 @@ router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
 
 // @route   GET api/admin/all
 // @desc    Get All Account Admin
-// @acess   Private
-router.get('/profile/all', userAuth, authAdmin, (req, res) => {
+// @acess   Public
+router.get('/profile/all', (req, res) => {
   Account.find()
     .populate('roleId')
     .exec((err, accounts) => {

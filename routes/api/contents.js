@@ -48,9 +48,7 @@ router.get('/all', (req, res) => {
         }
 
         if (req.query.isPublish) {
-          let isPublish;
-          if (req.query.isPublish === 'true') isPublish = true;
-          else isPublish = false;
+          const isPublish = req.query.isPublish === 'true' ? true : false;
 
           filterContents = contents.filter((content) => {
             return content.isPublish === isPublish;
@@ -58,12 +56,18 @@ router.get('/all', (req, res) => {
         }
 
         if (req.query.isInAdmin) {
-          let isInAdmin;
-          if (req.query.isInAdmin === 'true') isInAdmin = true;
-          else isInAdmin = false;
+          const isInAdmin = req.query.isInAdmin === 'true' ? true : false;
 
           filterContents = contents.filter((content) => {
             return content.isInAdmin === isInAdmin;
+          });
+        }
+
+        if (req.query.isReject) {
+          const isReject = req.query.isReject === 'true' ? true : false;
+
+          filterContents = contents.filter((content) => {
+            return content.isReject === isReject;
           });
         }
 
@@ -163,6 +167,30 @@ router.post(
   }
 );
 
+// @route   GET api/admin/contents/:slug
+// @desc    Get content by slug
+// @acess   Public
+router.put('/:slug', (req, res) => {
+  Content.findOne({ slug: req.params.slug })
+    .populate('author')
+    .exec((err, content) => {
+      if (err)
+        return res.status(500).json({
+          status: 'error',
+          error: err,
+        });
+
+      if (!content)
+        return res.status(404).json({
+          success: false,
+          message: 'Page not found',
+        });
+
+      content.author = serializeUser(content.author);
+      return res.status(200).json(contents);
+    });
+});
+
 // @route   POST api/admin/contents/edit/:slug
 // @desc    Edit a post
 // @acess   Private
@@ -238,7 +266,12 @@ router.put(
                 contentUpdate.imageContent = req.file;
               }
 
-              if (req.body.isPublish || req.body.note || req.body.isInAdmin) {
+              if (
+                req.body.isPublish ||
+                req.body.note ||
+                req.body.isInAdmin ||
+                req.body.isReject
+              ) {
                 if (req.body.isPublish) {
                   if (req.user.roleId.role !== 'operator') {
                     return res.status(403).json({
@@ -266,6 +299,15 @@ router.put(
                     });
                   }
                   contentUpdate.isInAdmin = req.body.isInAdmin;
+                }
+                if (req.body.isReject) {
+                  if (req.user.roleId.role !== 'operator') {
+                    return res.status(403).json({
+                      success: false,
+                      message: "You don't have previlage to reject this post",
+                    });
+                  }
+                  contentUpdate.isReject = req.body.isReject;
                 }
               }
 
