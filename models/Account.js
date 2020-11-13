@@ -16,6 +16,14 @@ const RoleSchema = new Schema({
     type: String,
     required: true,
   },
+  isCanManageAccount: {
+    type: Boolean,
+    default: false,
+  },
+  isCanManageRole: {
+    type: Boolean,
+    default: false,
+  }
 });
 
 // Schema Account

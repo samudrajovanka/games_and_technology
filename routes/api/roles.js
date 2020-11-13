@@ -42,6 +42,8 @@ router.post(
         role: req.body.role,
         admin: req.body.admin,
         description: req.body.description,
+        isCanManageAccount: req.body.isCanManageAccount,
+        isCanManageRole: req.body.isCanManageRole,
       });
 
       newRole
