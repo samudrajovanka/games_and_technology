@@ -254,14 +254,9 @@ router.put(
       accountUpdate.name = req.body.name;
     }
     
-    console.log(req.params.nickname)
     if (req.body.email || req.body.newPassword || req.body.instagram || req.body.twitter || req.body.steam || req.file) {
-      Account.findOne({ nickname: req.params.nickname.trim().toLowerCase() }).then((account) => {
-        if (!account)
-        return res.status(404).json({
-          status: 'error',
-          message: 'Page not found',
-        });
+      Account.findOne({ nickname: req.params.nickname.trim().toLowerCase() })
+        .then((account) => {
         
         if (req.user.nickname !== account.nickname) {
           return res.status(403).json({
@@ -348,6 +343,11 @@ router.put(
             }
           }
 
+          if (!account)
+        return res.status(404).json({
+          status: 'error',
+          message: 'Page not found',
+        });
          
         })
         .catch((err) =>

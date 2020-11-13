@@ -32,6 +32,7 @@ module.exports = validateUpdateInput = (data, currentData) => {
     });
   }
 
+
   if (data.newPassword) {
     if (!Validator.isLength(data.newPassword, { min: 8 })) {
       errors.newPassword = 'New password atleast 8 characters';
