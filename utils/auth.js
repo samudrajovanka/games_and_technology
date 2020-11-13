@@ -10,7 +10,7 @@ const serializeUser = (user) => {
     _id: user._id,
     nickname: user.nickname,
     email: user.email,
-    nama: user.nama,
+    name: user.name,
     accountImage: {
       filename: user.accountImage.filename,
       path: user.accountImage.path,
