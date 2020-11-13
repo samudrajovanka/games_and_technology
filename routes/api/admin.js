@@ -236,49 +236,61 @@ router.put(
   (req, res) => {
     const { errors, isValid } = validateUpdateInput(req.body, req.user);
     if (!isValid) return res.status(400).json(errors);
-
+    
     const accountUpdate = {};
 
-    if (req.body.nickname)
-      accountUpdate.nickname = req.body.nickname.toLowerCase();
-    if (req.body.email) accountUpdate.email = req.body.email.toLowerCase();
-    if (req.body.newPassword) accountUpdate.password = req.body.newPassword;
-    if (req.body.name) {
-      if (JSON.stringify(req.user.roleId.role) !== 'operator') 
+    
+    if (req.body.name || req.body.role) {
+      if (req.user.roleId.role !== 'operator') 
       {
         return res.status(403).json({
           success: false,
-          message: 'Only Operator who able to change the name'
+          message: 'Only Operator who able to make a changes'
         })
       }
-      accountUpdate.name = req.body.name;
-    }
-    if (req.body.role) {
       Role.findOne({ role: req.body.role }).then((role) => {
         accountUpdate.roleId = role._id;
       });
+      accountUpdate.name = req.body.name;
     }
-
-    if (req.file) {
-      if (req.user.accountImage.filename !== 'default_user.png') {
-        try {
-          fs.removeSync(req.user.accountImage.path);
-        } catch (err) {
-          return res.status(502).send({
-            status: 'error',
-            message: 'Error deleting image!',
-            error: err,
-          });
+    
+    console.log(req.params.nickname)
+    if (req.body.email || req.body.newPassword || req.body.instagram || req.body.twitter || req.body.steam || req.file) {
+      Account.findOne({ nickname: req.params.nickname.trim().toLowerCase() }).then((account) => {
+        if (!account)
+        return res.status(404).json({
+          status: 'error',
+          message: 'Page not found',
+        });
+        
+        if (req.user.nickname !== account.nickname) {
+          return res.status(403).json({
+            success: false,
+            message: 'Only the owner of this account who can make a changes'
+          })
         }
+        accountUpdate.password = req.body.newPassword;
+        accountUpdate.email = req.body.email.toLowerCase();
+        accountUpdate.socialMedia = {};
+        accountUpdate.socialMedia.instagram = req.body.instagram;
+        accountUpdate.socialMedia.twitter = req.body.twitter;
+        accountUpdate.socialMedia.steam = req.body.steam;
+       
+        if (req.user.accountImage.filename !== 'default_user.png') {
+          try {
+            fs.removeSync(req.user.accountImage.path);
+          } catch (err) {
+            return res.status(502).send({
+              status: 'error',
+              message: 'Error deleting image!',
+              error: err,
+            });
+          }
+        }
+        accountUpdate.accountImage = req.file;
       }
-      accountUpdate.accountImage = req.file;
+      )
     }
-
-    accountUpdate.socialMedia = {};
-    if (req.body.instagram)
-      accountUpdate.socialMedia.instagram = req.body.instagram;
-    if (req.body.twitter) accountUpdate.socialMedia.twitter = req.body.twitter;
-    if (req.body.steam) accountUpdate.socialMedia.steam = req.body.steam;
 
     accountUpdate.updateAt = Date.now();
 
@@ -336,11 +348,7 @@ router.put(
             }
           }
 
-          if (!account)
-            return res.status(404).json({
-              status: 'error',
-              message: 'Page not found',
-            });
+         
         })
         .catch((err) =>
           res.status(500).json({
