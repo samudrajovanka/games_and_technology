@@ -94,7 +94,10 @@ router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
   const { errors, isValid } = validateRegisterInput(req.body);
 
   // check validation
-  if (!isValid) return res.status(400).json(errors);
+  if (!isValid) {
+    errors.success = false;
+    return res.status(400).json(errors);
+  }
 
   Account.find()
     .then((accounts) => {
@@ -237,57 +240,71 @@ router.put(
     const { errors, isValid } = validateUpdateInput(req.body, req.user);
     if (!isValid) return res.status(400).json(errors);
     
+    let isOperator = false, isCurrentAccount = false;
+    if (req.user.roleId.role === 'operator') isOperator = true;
+    if (req.user.nickname === req.params.nickname) isCurrentAccount = true;
+  
     const accountUpdate = {};
-
     
-    if (req.body.name || req.body.role) {
-      if (req.user.roleId.role !== 'operator') 
-      {
+    if(req.body.role || req.body.name) {
+      if(!isOperator) {
         return res.status(403).json({
           success: false,
-          message: 'Only Operator who able to make a changes'
+          message: 'Only Operator who able to make a change name or role'
         })
       }
-      Role.findOne({ role: req.body.role }).then((role) => {
-        accountUpdate.roleId = role._id;
-      });
-      accountUpdate.name = req.body.name;
-    }
-    
-    if (req.body.email || req.body.newPassword || req.body.instagram || req.body.twitter || req.body.steam || req.file) {
-      Account.findOne({ nickname: req.params.nickname.trim().toLowerCase() })
-        .then((account) => {
-        
-        if (req.user.nickname !== account.nickname) {
+
+      if(req.body.role) {
+        Role.findOne({ role: req.body.role }).then((role) => {
+          accountUpdate.roleId = role._id;
+        });
+      }
+      
+      if (req.body.name) {
+        if (req.user.roleId.role !== 'operator') {
           return res.status(403).json({
             success: false,
-            message: 'Only the owner of this account who can make a changes'
+            message: 'Only Operator who able to make a change name'
           })
         }
-        accountUpdate.password = req.body.newPassword;
-        accountUpdate.email = req.body.email.toLowerCase();
-        accountUpdate.socialMedia = {};
-        accountUpdate.socialMedia.instagram = req.body.instagram;
-        accountUpdate.socialMedia.twitter = req.body.twitter;
-        accountUpdate.socialMedia.steam = req.body.steam;
-       
-        if (req.user.accountImage.filename !== 'default_user.png') {
-          try {
-            fs.removeSync(req.user.accountImage.path);
-          } catch (err) {
-            return res.status(502).send({
-              status: 'error',
-              message: 'Error deleting image!',
-              error: err,
-            });
-          }
-        }
-        accountUpdate.accountImage = req.file;
+        accountUpdate.name = req.body.name;
       }
-      )
     }
-
-    accountUpdate.updateAt = Date.now();
+    
+    if(isCurrentAccount) {
+      if (req.body.nickname) 
+        accountUpdate.nickname = req.body.nickname
+      if (req.body.email)
+        accountUpdate.email = req.body.email
+      if (req.body.password)
+        accountUpdate.password = req.body.password
+      
+      if (req.body.instagram || req.body.twitter || req.body.steam) {
+        accountUpdate.socialMedia = {}
+  
+        if (req.body.instagram)
+          accountUpdate.socialMedia.instagram = req.body.instagram
+        if(req.body.twitter)
+          accountUpdate.socialMedia.twitter = req.body.twitter
+        if(req.body.steam)
+          accountUpdate.socialMedia.steam = req.body.steam
+      }
+      
+      if (req.file) {
+        if (req.user.accountImage.filename !== 'default_user.png') {
+            try {
+              fs.removeSync(req.user.accountImage.path);
+            } catch (err) {
+              return res.status(502).send({
+                status: 'error',
+                message: 'Error deleting image!',
+                error: err,
+              });
+            }
+          }
+          accountUpdate.accountImage = req.file;
+      }
+    }
 
     Account.find().then((accounts) => {
       const alreadyAccount = accounts.filter((account) => {
@@ -307,6 +324,8 @@ router.put(
         });
         return res.status(400).json(errors);
       }
+    });
+      
 
       Account.findOne({ nickname: req.params.nickname.toLowerCase() })
         .then((account) => {
@@ -341,14 +360,12 @@ router.put(
                 message: 'There is no update in your profile',
               });
             }
+          } else {
+            return res.status(404).json({
+              status: 'error',
+              message: 'Page not found',
+            });
           }
-
-          if (!account)
-        return res.status(404).json({
-          status: 'error',
-          message: 'Page not found',
-        });
-         
         })
         .catch((err) =>
           res.status(500).json({
@@ -356,7 +373,6 @@ router.put(
             error: err,
           })
         );
-    });
   }
 );
 

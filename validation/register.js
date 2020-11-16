@@ -2,7 +2,9 @@ const Validator = require('validator');
 const isEmpty = require('./isEmpty');
 
 module.exports = validateRegisterInput = (data) => {
-  let errors = {};
+  let errors = {
+    success: false
+  };
 
   data.nickname = !isEmpty(data.nickname) ? data.nickname : '';
   data.email = !isEmpty(data.email) ? data.email : '';
@@ -38,8 +40,12 @@ module.exports = validateRegisterInput = (data) => {
   if (!Validator.equals(data.password, data.confirmPassword)) {
     errors.confirmPassword = 'Password must match';
   }
+
+  if (!(errors.nickname || errors.email || errors.password || errors.confirmPassword))
+    errors.success = true
+
   return {
     errors,
-    isValid: isEmpty(errors),
+    isValid: errors.success,
   };
 };
