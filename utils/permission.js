@@ -1,8 +1,12 @@
+const checkPermission = (permission) => (req, res, next) => {
+  
+} 
+
 const checkRoles = (roles) => (req, res, next) => {
   if (!roles.includes(req.user.roleId.role)) {
     return res.status(403).send({
       status: 'error',
-      message: "You don't have access",
+      message: 'You don\'t have access',
     });
   }
   next();
@@ -22,6 +26,7 @@ const actionAccount = (req, res, next) => {
 };
 
 module.exports = {
+  checkPermission,
   checkRoles,
   actionAccount,
 };

@@ -39,11 +39,21 @@ router.post(
         });
 
       const newRole = new Role({
-        role: req.body.role,
+        role: req.body.role.toLowerCase(),
         admin: req.body.admin,
         description: req.body.description,
-        isCanManageAccount: req.body.isCanManageAccount,
-        isCanManageRole: req.body.isCanManageRole,
+        isCanCreateAccount: req.body.isCanCreateAccount,
+        isCanUpdateAccount: req.body.isCanUpdateAccount,
+        isCanDeleteAccount: req.body.isCanDeleteAccount,
+        isCanCreateRole: req.body.isCanCreateRole,
+        isCanEditRole: req.body.isCanEditRole,
+        isCanDeleteRole: req.body.isCanDeleteRole,
+        isCanCreatePostAboutGame: req.body.isCanCreatePostAboutGame,
+        isCanDeletePostAboutGame: req.body.isCanDeletePostAboutGame,
+        isCanCreatePostAboutTech: req.body.isCanCreatePostAboutTech,
+        isCanDeletePostAboutTech: req.body.isCanDeletePostAboutTech,
+        isCanApprovePostAboutGame: req.body.isCanApprovePostAboutGame,
+        isCanApprovePostAboutTech: req.body.isCanApprovePostAboutTech,
       });
 
       newRole
@@ -72,6 +82,18 @@ router.put(
     if (req.body.role) roleUpdate.role = req.body.role.toLowerCase();
     if (req.body.isAdmin) roleUpdate.isAdmin = req.body.isAdmin;
     if (req.body.description) roleUpdate.description = req.body.description;
+    if (req.body.isCanCreateAccount) roleUpdate.isCanCreateAccount = req.body.isCanCreateAccount;
+    if (req.body.isCanUpdateAccount) roleUpdate.isCanUpdateAccount = req.body.isCanUpdateAccount;
+    if (req.body.isCanDeleteAccount) roleUpdate.isCanDeleteAccount = req.body.isCanDeleteAccount;
+    if (req.body.isCanCreateRole) roleUpdate.isCanCreateRole = req.body.isCanCreateRole;
+    if (req.body.isCanEditRole) roleUpdate.isCanEditRole = req.body.isCanEditRole;
+    if (req.body.isCanDeleteRole) roleUpdate.isCanDeleteRole = req.body.isCanDeleteRole;
+    if (req.body.isCanCreatePostAboutGame) roleUpdate.isCanCreatePostAboutGame = req.body.isCanCreatePostAboutGame;
+    if (req.body.isCanDeletePostAboutGame) roleUpdate.isCanDeletePostAboutGame = req.body.isCanDeletePostAboutGame;
+    if (req.body.isCanCreatePostAboutTech) roleUpdate.isCanCreatePostAboutTech = req.body.isCanCreatePostAboutTech;
+    if (req.body.isCanDeletePostAboutTech) roleUpdate.isCanDeletePostAboutTech = req.body.isCanDeletePostAboutTech;
+    if (req.body.isCanApprovePostAboutGame) roleUpdate.isCanApprovePostAboutGame = req.body.isCanApprovePostAboutGame;
+    if (req.body.isCanApprovePostAboutTech) roleUpdate.isCanApprovePostAboutTech = req.body.isCanApprovePostAboutTech;
 
     Role.find().then((roles) => {
       const roleAlready = roles.filter((role) => {

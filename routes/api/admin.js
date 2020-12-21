@@ -16,7 +16,7 @@ const {
 } = require('../../utils/auth');
 
 // Load checkRole
-const { checkRoles, actionAccount } = require('../../utils/permission');
+const { checkPermission, checkRoles, actionAccount } = require('../../utils/permission');
 
 // Load input validation
 const validateRegisterInput = require('../../validation/register');
@@ -90,7 +90,7 @@ router.post('/login', loginAdmin, (req, res) => {
 // @route   POST api/account
 // @desc    Create An Account
 // @acess   Private
-router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
+router.post('/register', userAuth, checkPermission(req.user.roleId.isCanCreateAccount), (req, res) => {
   const { errors, isValid } = validateRegisterInput(req.body);
 
   // check validation
@@ -131,18 +131,18 @@ router.post('/register', userAuth, checkRoles(['operator']), (req, res) => {
 
         const newAccount = new Account({
           roleId: role._id,
-          nickname: req.body.nickname,
+          nickname: req.body.nickname.trim().toLowerCase(),
           name: req.body.name,
-          email: req.body.email,
+          email: req.body.email.trim().toLowerCase(),
           password: req.body.password,
           accountImage: {
             filename: 'default_user.png',
             path: 'static/image/default_user.png',
           },
           socialMedia: {
-            instagram: req.body.instagram,
-            twitter: req.body.twitter,
-            steam: req.body.steam,
+            instagram: req.body.instagram.trim().toLowerCase(),
+            twitter: req.body.twitter.trim().toLowerCase(),
+            steam: req.body.steam.trim().toLowerCase(),
           },
         });
 
@@ -273,9 +273,9 @@ router.put(
     
     if(isCurrentAccount) {
       if (req.body.nickname) 
-        accountUpdate.nickname = req.body.nickname
+        accountUpdate.nickname = req.body.nickname.trim().toLowerCase()
       if (req.body.email)
-        accountUpdate.email = req.body.email
+        accountUpdate.email = req.body.email.trim().toLowerCase()
       if (req.body.password)
         accountUpdate.password = req.body.password
       
@@ -283,11 +283,11 @@ router.put(
         accountUpdate.socialMedia = {}
   
         if (req.body.instagram)
-          accountUpdate.socialMedia.instagram = req.body.instagram
+          accountUpdate.socialMedia.instagram = req.body.instagram.trim().toLowerCase()
         if(req.body.twitter)
-          accountUpdate.socialMedia.twitter = req.body.twitter
+          accountUpdate.socialMedia.twitter = req.body.twitter.trim().toLowerCase()
         if(req.body.steam)
-          accountUpdate.socialMedia.steam = req.body.steam
+          accountUpdate.socialMedia.steam = req.body.steam.trim().toLowerCase()
       }
       
       if (req.file) {
