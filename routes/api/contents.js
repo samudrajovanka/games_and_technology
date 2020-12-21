@@ -11,7 +11,7 @@ const { Account } = require('../../models/Account');
 const { userAuth, authAdmin, serializeUser } = require('../../utils/auth.js');
 
 // Load Permission
-const { checkRoles } = require('../../utils/permission.js');
+const { checkPermission } = require('../../utils/permission.js');
 
 // Load upload image
 const uploadImage = require('../../utils/uploadImage');
@@ -95,7 +95,7 @@ router.post(
   userAuth,
   uploadImage.single('imageContent'),
   authAdmin,
-  checkRoles(['operator', 'modGame', 'modTech']),
+  checkPermission('isCanCreatePost'),
   (req, res) => {
     const { errors, isValid } = validateCreatePost(req.body, req.file);
     // Check validation
@@ -198,6 +198,7 @@ router.put(
   '/edit/:slug',
   userAuth,
   authAdmin,
+  checkPermission('isCanEditPost'),
   uploadImage.single('imageContent'),
   (req, res) => {
     Content.findOne({ slug: req.params.slug.trim().toLowerCase() })
@@ -344,60 +345,64 @@ router.put(
 // @route   POST api/admin/contents/delete/:slug
 // @desc    Delete a post
 // @acess   Private
-router.delete('/delete/:slug', userAuth, authAdmin, (req, res) => {
-  Content.findOne({ slug: req.params.slug })
-    .populate({
-      path: 'author',
-      populate: { path: 'roleId' },
-    })
-    .then((content) => {
-      if (!content)
-        return res.status(404).json({
-          success: false,
-          message: 'Page not found',
-        });
-
-      if (
-        JSON.stringify(content.author._id) !== JSON.stringify(req.user._id) &&
-        req.user.roleId.role !== 'operator'
-      ) {
-        return res.status(403).json({
-          success: false,
-          message:
-            'only the Operator or the Admin who wrote this are able to delete the post',
-        });
-      }
-
-      try {
-        fs.removeSync(content.imageContent.path);
-      } catch (err) {
-        res.status(502).send({
-          status: 'error',
-          message: 'Error deleting image!',
-          error: err,
-        });
-      }
-
-      content
-        .remove({ slug: req.params.slug.trim().toLowerCase() })
-        .then(() => {
-          return res.status(200).json({
-            success: true,
-            message: 'Post succesfully deleted',
-          });
-        });
-    })
-    .catch((err) =>
-      res.status(500).json({
-        status: 'error',
-        eropr: err,
+router.delete('/delete/:slug',
+  userAuth,
+  authAdmin,
+  checkPermission('isCanDeletePost'),
+  (req, res) => {
+    Content.findOne({ slug: req.params.slug })
+      .populate({
+        path: 'author',
+        populate: { path: 'roleId' },
       })
-    );
-});
+      .then((content) => {
+        if (!content)
+          return res.status(404).json({
+            success: false,
+            message: 'Page not found',
+          });
+
+        if (
+          JSON.stringify(content.author._id) !== JSON.stringify(req.user._id) &&
+          req.user.roleId.role !== 'operator'
+        ) {
+          return res.status(403).json({
+            success: false,
+            message:
+              'only the Operator or the Admin who wrote this are able to delete the post',
+          });
+        }
+
+        try {
+          fs.removeSync(content.imageContent.path);
+        } catch (err) {
+          res.status(502).send({
+            status: 'error',
+            message: 'Error deleting image!',
+            error: err,
+          });
+        }
+
+        content
+          .remove({ slug: req.params.slug.trim().toLowerCase() })
+          .then(() => {
+            return res.status(200).json({
+              success: true,
+              message: 'Post succesfully deleted',
+            });
+          });
+      })
+      .catch((err) =>
+        res.status(500).json({
+          status: 'error',
+          eropr: err,
+        })
+      );
+  });
 
 // @route   POST api/contents/like/:slug
 // @desc    Likes a post
-// @acess   Private
+// @acess   Public
 router.post('/like/:slug', userAuth, (req, res) => {
   Content.findOne({ slug: req.params.slug.trim().toLowerCase() })
     .then((content) => {
@@ -437,7 +442,7 @@ router.post('/like/:slug', userAuth, (req, res) => {
 
 // @route   POST api/contents/unlike/:slug
 // @desc    Unlikes a post
-// @acess   Private
+// @acess   Public
 router.post('/unlike/:slug', userAuth, (req, res) => {
   Content.findOne({ slug: req.params.slug.trim().toLowerCase() })
     .then((content) => {
@@ -482,7 +487,7 @@ router.post('/unlike/:slug', userAuth, (req, res) => {
 
 // @route   POST api/admin/contents/comment/:slug
 // @desc    Comment a Post
-// @acess   Private
+// @acess   Public
 router.post('/comment/:slug', userAuth, (req, res) => {
   Content.findOne({ slug: req.params.slug.trim().toString() })
     .then((content) => {
@@ -533,6 +538,17 @@ router.delete('/comment/:slug/delete/:comment_id', userAuth, (req, res) => {
             JSON.stringify(req.params.comment_id)
         )
       ) {
+
+        if (
+          JSON.stringify(content.comment.account) !== JSON.stringify(req.user._id) &&
+          req.user.roleId.role !== 'operator' && JSON.stringify(content.author) !== JSON.stringify(req.user._id)
+        ) {
+          return res.status(403).json({
+            status: 'error',
+            message: 'only the writter and operator who can edit this files',
+          });
+        }
+
         const removeComment = content.comments.findIndex(
           (comment) => comment._id === req.params._id
         );

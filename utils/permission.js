@@ -1,16 +1,26 @@
 const checkPermission = (permission) => (req, res, next) => {
-  
-} 
+  const entries = Object.entries(req.user.roleId['_doc']);
 
-const checkRoles = (roles) => (req, res, next) => {
-  if (!roles.includes(req.user.roleId.role)) {
+  let valid = false;
+  for(const [key, value] of entries) {
+    if(key === permission) {
+      if(value === true) {
+        valid = true;
+        break;
+      }
+      break;
+    }
+  }
+
+  if(valid) {
+    next();
+  } else {
     return res.status(403).send({
-      status: 'error',
-      message: 'You don\'t have access',
+        status: 'error',
+        message: 'You don\'t have access',
     });
   }
-  next();
-};
+}
 
 const actionAccount = (req, res, next) => {
   if (
@@ -27,6 +37,5 @@ const actionAccount = (req, res, next) => {
 
 module.exports = {
   checkPermission,
-  checkRoles,
   actionAccount,
 };

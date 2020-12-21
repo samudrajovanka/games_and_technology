@@ -40,19 +40,15 @@ const RoleSchema = new Schema({
     type: Boolean,
     default: false
   },
-  isCanCreatePostAboutGame: {
+  isCanCreatePost: {
     type: Boolean,
     default: false
   },
-  isCanDeletePostAboutGame: {
+  isCanDeletePost: {
     type: Boolean,
     default: false
   },
-  isCanCreatePostAboutTech: {
-    type: Boolean,
-    default: false
-  },
-  isCanDeletePostAboutTech: {
+  isCanEditPost: {
     type: Boolean,
     default: false
   },

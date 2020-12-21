@@ -8,7 +8,7 @@ const { Role, Account } = require('../../models/Account');
 const { userAuth, authAdmin } = require('../../utils/auth');
 
 // Load permission
-const { checkRoles } = require('../../utils/permission');
+const { checkPermission } = require('../../utils/permission');
 
 // Load validation
 const isEmpty = require('../../validation/isEmpty');
@@ -29,7 +29,7 @@ router.post(
   '/add',
   userAuth,
   authAdmin,
-  checkRoles(['operator']),
+  checkPermission('isCanCreateRole'),
   (req, res) => {
     Role.findOne({ role: req.body.role }).then((role) => {
       if (role)
@@ -40,7 +40,7 @@ router.post(
 
       const newRole = new Role({
         role: req.body.role.toLowerCase(),
-        admin: req.body.admin,
+        isAdmin: req.body.isAdmin,
         description: req.body.description,
         isCanCreateAccount: req.body.isCanCreateAccount,
         isCanUpdateAccount: req.body.isCanUpdateAccount,
@@ -48,10 +48,9 @@ router.post(
         isCanCreateRole: req.body.isCanCreateRole,
         isCanEditRole: req.body.isCanEditRole,
         isCanDeleteRole: req.body.isCanDeleteRole,
-        isCanCreatePostAboutGame: req.body.isCanCreatePostAboutGame,
-        isCanDeletePostAboutGame: req.body.isCanDeletePostAboutGame,
-        isCanCreatePostAboutTech: req.body.isCanCreatePostAboutTech,
-        isCanDeletePostAboutTech: req.body.isCanDeletePostAboutTech,
+        isCanCreatePost: req.body.isCanCreatePost,
+        isCanDeletePost: req.body.isCanDeletePost,
+        isCanEditPost: req.body.isCanEditPost,
         isCanApprovePostAboutGame: req.body.isCanApprovePostAboutGame,
         isCanApprovePostAboutTech: req.body.isCanApprovePostAboutTech,
       });
@@ -76,7 +75,7 @@ router.put(
   '/edit/:id',
   userAuth,
   authAdmin,
-  checkRoles(['operator']),
+  checkPermission('isCanEditRole'),
   (req, res) => {
     const roleUpdate = {};
     if (req.body.role) roleUpdate.role = req.body.role.toLowerCase();
@@ -88,11 +87,10 @@ router.put(
     if (req.body.isCanCreateRole) roleUpdate.isCanCreateRole = req.body.isCanCreateRole;
     if (req.body.isCanEditRole) roleUpdate.isCanEditRole = req.body.isCanEditRole;
     if (req.body.isCanDeleteRole) roleUpdate.isCanDeleteRole = req.body.isCanDeleteRole;
-    if (req.body.isCanCreatePostAboutGame) roleUpdate.isCanCreatePostAboutGame = req.body.isCanCreatePostAboutGame;
-    if (req.body.isCanDeletePostAboutGame) roleUpdate.isCanDeletePostAboutGame = req.body.isCanDeletePostAboutGame;
-    if (req.body.isCanCreatePostAboutTech) roleUpdate.isCanCreatePostAboutTech = req.body.isCanCreatePostAboutTech;
-    if (req.body.isCanDeletePostAboutTech) roleUpdate.isCanDeletePostAboutTech = req.body.isCanDeletePostAboutTech;
-    if (req.body.isCanApprovePostAboutGame) roleUpdate.isCanApprovePostAboutGame = req.body.isCanApprovePostAboutGame;
+    if (req.body.isCanCreatePost) roleUpdate.isCanCreatePost = req.body.isCanCreatePost;
+    if (req.body.isCanDeletePost) roleUpdate.isCanDeletePost = req.body.isCanDeletePost;
+    if (req.body.isCanEditPost) roleUpdate.isCanEditPost = req.body.isCanEditPost;
+    if (req.body.isCanApprovePostAboutGame) roleUpdate.isCanApprovePost = req.body.isCanApprovePost;
     if (req.body.isCanApprovePostAboutTech) roleUpdate.isCanApprovePostAboutTech = req.body.isCanApprovePostAboutTech;
 
     Role.find().then((roles) => {
@@ -141,7 +139,7 @@ router.delete(
   '/delete/:id',
   userAuth,
   authAdmin,
-  checkRoles(['operator']),
+  checkPermission('isCanDeleteRole'),
   (req, res) => {
     Account.find()
       .populate('roleId')

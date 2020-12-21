@@ -16,7 +16,7 @@ const {
 } = require('../../utils/auth');
 
 // Load checkRole
-const { checkPermission, checkRoles, actionAccount } = require('../../utils/permission');
+const { checkPermission, actionAccount } = require('../../utils/permission');
 
 // Load input validation
 const validateRegisterInput = require('../../validation/register');
@@ -90,7 +90,7 @@ router.post('/login', loginAdmin, (req, res) => {
 // @route   POST api/account
 // @desc    Create An Account
 // @acess   Private
-router.post('/register', userAuth, checkPermission(req.user.roleId.isCanCreateAccount), (req, res) => {
+router.post('/register', userAuth, checkPermission('isCanCreateAccount'), (req, res) => {
   const { errors, isValid } = validateRegisterInput(req.body);
 
   // check validation
@@ -129,6 +129,18 @@ router.post('/register', userAuth, checkPermission(req.user.roleId.isCanCreateAc
           });
         }
 
+        const socialMedia = {}
+        if(req.body.instagram || req.body.twitter || req.body.steam) {
+          if(req.body.instagram) socialMedia.instagram = req.body.instagram.trim().toLowerCase();
+          if(req.body.twitter) socialMedia.twitter = req.body.twitter.trim().toLowerCase();
+          if(req.body.steam) socialMedia.steam = req.body.steam.trim().toLowerCase();
+        }
+
+        if(!req.body.instagram) socialMedia.instagram = "-";
+        if(!req.body.twitter) socialMedia.twitter = "-";
+        if(!req.body.steam) socialMedia.steam = "-";
+        
+
         const newAccount = new Account({
           roleId: role._id,
           nickname: req.body.nickname.trim().toLowerCase(),
@@ -140,9 +152,9 @@ router.post('/register', userAuth, checkPermission(req.user.roleId.isCanCreateAc
             path: 'static/image/default_user.png',
           },
           socialMedia: {
-            instagram: req.body.instagram.trim().toLowerCase(),
-            twitter: req.body.twitter.trim().toLowerCase(),
-            steam: req.body.steam.trim().toLowerCase(),
+            instagram: socialMedia.instagram,
+            twitter: socialMedia.twitter,
+            steam: socialMedia.steam,
           },
         });
 
@@ -383,7 +395,7 @@ router.delete(
   '/profile/delete/:nickname',
   userAuth,
   authAdmin,
-  checkRoles(['operator']),
+  checkPermission('isCanDeleteAccount'),
   (req, res) => {
     Account.findOne({ nickname: req.params.nickname.trim().toLowerCase() })
       .then((account) => {
