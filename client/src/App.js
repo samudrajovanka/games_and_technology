@@ -1,17 +1,18 @@
 import React, { Component } from "react";
-import logo from "./logo.svg";
-import "./App.css";
+import {BrowserRouter as Router, Route, Switch} from 'react-router-dom'
+
+import Login from './component/authAdmin/Login';
 
 class App extends Component {
   render() {
     return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Selamat datang di Games and Technology</h1>
-        </header>
-        <p className="App-intro">Silahkan menikmati konten kita.</p>
-      </div>
+      <Router>
+        <div className="App">
+          <Switch>
+            <Route path="/admin/login" component={Login}/>
+          </Switch>
+        </div>
+      </Router>
     );
   }
 }
