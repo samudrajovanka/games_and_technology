@@ -99,8 +99,8 @@ router.post('/register', (req, res) => {
 
         const newAccount = new Account({
           roleId: role._id,
-          nickname: req.body.nickname,
-          email: req.body.email,
+          nickname: req.body.nickname.trim().toLowerCase(),
+          email: req.body.email.trim().toLowerCase(),
           password: req.body.password,
           accountImage: {
             filename: 'default_user.png',
@@ -243,9 +243,9 @@ router.put(
 
     accountUpdate.socialMedia = {};
     if (req.body.instagram)
-      accountUpdate.socialMedia.instagram = req.body.instagram;
-    if (req.body.twitter) accountUpdate.socialMedia.twitter = req.body.twitter;
-    if (req.body.steam) accountUpdate.socialMedia.steam = req.body.steam;
+      accountUpdate.socialMedia.instagram = req.body.instagram.trim().toLowerCase();
+    if (req.body.twitter) accountUpdate.socialMedia.twitter = req.body.twitter.trim().toLowerCase();
+    if (req.body.steam) accountUpdate.socialMedia.steam = req.body.steam.trim().toLowerCase();
 
     accountUpdate.updateAt = Date.now();
 

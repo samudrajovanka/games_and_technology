@@ -16,6 +16,50 @@ const RoleSchema = new Schema({
     type: String,
     required: true,
   },
+  isCanCreateAccount: {
+    type: Boolean,
+    default: false,
+  },
+  isCanUpdateAccount: {
+    type: Boolean,
+    default: false,
+  },
+  isCanDeleteAccount: {
+    type: Boolean,
+    default: false
+  },
+  isCanCreateRole: {
+    type: Boolean,
+    default: false
+  },
+  isCanEditRole: {
+    type: Boolean,
+    default: false
+  },
+  isCanDeleteRole: {
+    type: Boolean,
+    default: false
+  },
+  isCanCreatePost: {
+    type: Boolean,
+    default: false
+  },
+  isCanDeletePost: {
+    type: Boolean,
+    default: false
+  },
+  isCanEditPost: {
+    type: Boolean,
+    default: false
+  },
+  isCanApprovePostAboutGame: {
+    type: Boolean,
+    default: false
+  },
+  isCanApprovePostAboutTech: {
+    type: Boolean,
+    default: false
+  }
 });
 
 // Schema Account
