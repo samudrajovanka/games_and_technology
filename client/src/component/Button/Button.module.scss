@@ -1,0 +1,19 @@
+@import '../../styles/colors';
+
+.button {
+    background-color: $white;
+    border-radius: 5px;
+    height: 40px;
+    outline: none;
+    border: none;
+    color: black;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+
+    &__success {
+        background-color: $green;
+        color: $white;
+    }
+}
