@@ -1,0 +1,45 @@
+@import './colors';
+
+@mixin container($width: auto, $height: auto, $bg-color: transparent, $padding: 0, $border-radius: 0) {
+    @if $width != auto {
+        width: $width;
+    }
+    
+    @if $height != auto {
+        height: $height;
+    }
+
+    @if $bg-color != transparent {
+        background-color: $bg-color;
+    }
+
+    @if $padding != 0 {
+        padding: $padding;
+    }
+
+    @if $border-radius != 0 {
+        border-radius: $border-radius;
+    }
+}
+
+@mixin container-center($width: auto, $height: auto, $bg-color: transparent, $padding: 0, $border-radius: 0) {
+    @include container($width, $height, $bg-color);
+
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+@mixin title($color: $black) {
+    color: $color;
+    margin: 0;
+    font-size: 24px;
+}
+
+@mixin alert($color: $white) {
+    color: $color;
+    margin: 5px;
+    font-size: 16px;
+    font-weight: bold;
+}

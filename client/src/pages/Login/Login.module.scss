@@ -1,0 +1,18 @@
+@import '../../styles/library';
+
+.container {
+    @include container-center($width: 400px);
+}
+
+.container_form {
+    @include container($width: 400px, $bg-color: $red, $padding: 20px, $border-radius: 5px);
+}
+
+.container_form .title {
+    @include title($white);
+    margin-bottom: 20px;
+}
+
+.container_form .alert {
+    @include alert();
+}
