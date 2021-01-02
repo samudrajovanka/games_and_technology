@@ -12,3 +12,7 @@
     @include title($white);
     margin-bottom: 20px;
 }
+
+.container_form .alert {
+    @include alert();
+}
